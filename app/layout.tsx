@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import CursorProvider from '@/components/CursorProvider';
+import GlobalAudioControl from '@/components/GlobalAudioControl';
 
 export const metadata: Metadata = {
   title: "The Coyote's Intercept Terminal — Rustbound Frontier",
@@ -17,6 +18,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="font-mono bg-matte-base text-amber-glow antialiased">
         <CursorProvider />
+        <GlobalAudioControl />
         {children}
       </body>
     </html>

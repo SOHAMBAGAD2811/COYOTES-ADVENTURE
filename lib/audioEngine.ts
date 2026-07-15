@@ -8,7 +8,8 @@ class AudioEngine {
   activeIntervals: NodeJS.Timeout[] = [];
   currentTrack: string | null = null;
   isMuted: boolean = false;
-  listeners: Set<(muted: boolean) => void> = new Set();
+  volume: number = 0.4;
+  listeners: Set<(state: { muted: boolean; volume: number }) => void> = new Set();
 
   init() {
     if (this.ctx) return;
@@ -17,7 +18,7 @@ class AudioEngine {
     
     this.ctx = new AudioCtx();
     this.masterGain = this.ctx.createGain();
-    this.masterGain.gain.value = this.isMuted ? 0 : 0.4;
+    this.masterGain.gain.value = this.isMuted ? 0 : this.volume;
     this.masterGain.connect(this.ctx.destination);
 
     const unlock = () => {
@@ -32,12 +33,24 @@ class AudioEngine {
   toggleMute() {
     this.isMuted = !this.isMuted;
     if (this.masterGain && this.ctx) {
-      this.masterGain.gain.setTargetAtTime(this.isMuted ? 0 : 0.4, this.ctx.currentTime, 0.05);
+      this.masterGain.gain.setTargetAtTime(this.isMuted ? 0 : this.volume, this.ctx.currentTime, 0.05);
     }
-    this.listeners.forEach(l => l(this.isMuted));
+    this.notifyListeners();
   }
 
-  subscribe(listener: (muted: boolean) => void): () => void {
+  setVolume(vol: number) {
+    this.volume = Math.max(0, Math.min(1, vol));
+    if (!this.isMuted && this.masterGain && this.ctx) {
+      this.masterGain.gain.setTargetAtTime(this.volume, this.ctx.currentTime, 0.05);
+    }
+    this.notifyListeners();
+  }
+
+  private notifyListeners() {
+    this.listeners.forEach(l => l({ muted: this.isMuted, volume: this.volume }));
+  }
+
+  subscribe(listener: (state: { muted: boolean; volume: number }) => void): () => void {
     this.listeners.add(listener);
     return () => { this.listeners.delete(listener); };
   }
