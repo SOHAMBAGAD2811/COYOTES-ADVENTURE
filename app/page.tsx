@@ -48,7 +48,7 @@ export default function Home() {
     let track = 'intro';
     if (s.missionStatus === 'success') {
       track = 'success';
-    } else if (s.missionStatus === 'fail') {
+    } else if (s.missionStatus === 'failed') {
       track = 'intro';
     } else if (s.missionStage === 'firewall') {
       track = 'firewall';

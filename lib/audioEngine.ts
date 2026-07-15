@@ -37,9 +37,9 @@ class AudioEngine {
     this.listeners.forEach(l => l(this.isMuted));
   }
 
-  subscribe(listener: (muted: boolean) => void) {
+  subscribe(listener: (muted: boolean) => void): () => void {
     this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
+    return () => { this.listeners.delete(listener); };
   }
 
   resume() {
