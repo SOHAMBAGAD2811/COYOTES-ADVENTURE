@@ -9,6 +9,8 @@
   will-change: left, top, transform;
 }
 
+/* ── Full mode (story/intercom): spinning target brackets ── */
+
 .target-cursor-dot {
   position: absolute;
   width: 5px;
@@ -27,27 +29,7 @@
   will-change: transform;
 }
 
-/* Base corner positions relative to the anchor (cursor center) */
-.corner-tl {
-  border-right: none;
-  border-bottom: none;
-  transform: translate(-10px, -10px);
-}
-
-.corner-tr {
-  border-left: none;
-  border-bottom: none;
-  transform: translate(0px, -10px);
-}
-
-.corner-br {
-  border-left: none;
-  border-top: none;
-  transform: translate(0px, 0px);
-}
-
-.corner-bl {
-  border-right: none;
-  border-top: none;
-  transform: translate(-10px, 0px);
-}
+.corner-tl { border-right: none; border-bottom: none; }
+.corner-tr { border-left: none;  border-bottom: none; }
+.corner-br { border-left: none;  border-top: none;    }
+.corner-bl { border-right: none; border-top: none;    }

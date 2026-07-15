@@ -15,6 +15,32 @@ interface TargetCursorProps {
   cursorColorOnTarget?: string;
 }
 
+// Glowing hand SVG — hotspot is the tip of the index finger (top-left of SVG)
+function HandCursor({ color, pressed }: { color: string; pressed: boolean }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      width="28"
+      height="28"
+      fill={color}
+      style={{
+        position: 'absolute',
+        // offset so the fingertip maps to (0,0) of the wrapper
+        left: '0px',
+        top: '0px',
+        transform: pressed ? 'scale(0.88)' : 'scale(1)',
+        transition: 'transform 0.1s',
+        filter: `drop-shadow(0 0 6px ${color}) drop-shadow(0 0 12px ${color}44)`,
+        pointerEvents: 'none',
+      }}
+    >
+      {/* Classic pointer / hand cursor shape */}
+      <path d="M9 1.5A1.5 1.5 0 0 0 7.5 3v8.25l-.97-.97A2.25 2.25 0 0 0 3.34 13.5l3.41 3.41A6.75 6.75 0 0 0 11.54 19h2.46A5.25 5.25 0 0 0 19.25 13.75V9A1.5 1.5 0 0 0 16.25 9v-.25A1.5 1.5 0 0 0 13.25 8.75V8.5A1.5 1.5 0 0 0 10.5 8.5V3A1.5 1.5 0 0 0 9 1.5z" />
+    </svg>
+  );
+}
+
 const TargetCursor = ({
   targetSelector = '.cursor-target',
   spinDuration = 2,
@@ -24,13 +50,13 @@ const TargetCursor = ({
   cursorColor = '#ffffff',
   cursorColorOnTarget,
 }: TargetCursorProps) => {
-  const cursorRef = useRef<HTMLDivElement>(null);
-  const dotRef = useRef<HTMLDivElement>(null);
-  const cornersRef = useRef<HTMLDivElement[]>([]);
+  const cursorRef    = useRef<HTMLDivElement>(null);
+  const dotRef       = useRef<HTMLDivElement>(null);
+  const cornersRef   = useRef<HTMLDivElement[]>([]);
 
-  const [mode, setMode] = useState(cursorStore.mode);
+  const [mode, setMode]       = useState(cursorStore.mode);
+  const [pressed, setPressed] = useState(false);
 
-  // Subscribe to global cursor mode changes
   useEffect(() => cursorStore.subscribe(setMode), []);
 
   const isMobile = useMemo(() => {
@@ -44,146 +70,134 @@ const TargetCursor = ({
     if (isMobile || !cursorRef.current) return;
 
     const wrapper = cursorRef.current;
-    const corners = cornersRef.current;
-    const dot = dotRef.current;
+    const corners  = cornersRef.current;
+    const dot      = dotRef.current;
 
     if (hideDefaultCursor) document.body.style.cursor = 'none';
 
-    // Reflect mode changes on the wrapper
-    const unsubMode = cursorStore.subscribe(m => {
-      wrapper.style.opacity = m === 'minimal' ? '0.3' : '1';
-    });
-    wrapper.style.opacity = cursorStore.mode === 'minimal' ? '0.3' : '1';
-
     let mouseX = window.innerWidth / 2;
     let mouseY = window.innerHeight / 2;
-    let curX = mouseX;
-    let curY = mouseY;
-    let rafId = 0;
+    let curX   = mouseX;
+    let curY   = mouseY;
+    let rafId  = 0;
     let spinning = cursorStore.mode === 'full';
     let rotation = 0;
     let lastTime = performance.now();
     const degsPerMs = 360 / (spinDuration * 1000);
 
+    // Update spin state when mode changes
+    const unsubMode = cursorStore.subscribe(m => {
+      spinning = m === 'full';
+      if (m === 'full') {
+        // reset rotation cleanly
+        rotation = 0;
+      } else {
+        wrapper.style.transform = 'none';
+      }
+    });
+
     const cornerCurrent = [
       { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 },
     ];
 
-    let locked = false;
+    let locked      = false;
     let lockStrength = 0;
-    let lockedRect: { tl: {x:number,y:number}, tr: {x:number,y:number}, br: {x:number,y:number}, bl: {x:number,y:number} } | null = null;
+    let lockedRect: { tl:{x:number,y:number}, tr:{x:number,y:number}, br:{x:number,y:number}, bl:{x:number,y:number} } | null = null;
 
-    // Unlock helper — called on click or mouseleave
     const unlock = () => {
       if (!locked) return;
-      locked = false;
+      locked     = false;
       lockedRect = null;
-
       corners.forEach(c => (c.style.borderColor = cursorColor));
       if (dot) dot.style.backgroundColor = cursorColor;
-
-      setTimeout(() => { if (!locked) spinning = true; }, 50);
+      setTimeout(() => { if (!locked) spinning = cursorStore.mode === 'full'; }, 50);
     };
 
     const tick = (now: number) => {
-      const dt = Math.min(now - lastTime, 50); // cap dt to avoid jumps on tab switch
-      lastTime = now;
-
+      const dt  = Math.min(now - lastTime, 50);
+      lastTime  = now;
       const ease = 1 - Math.pow(0.008, dt / 1000);
+
       curX += (mouseX - curX) * ease;
       curY += (mouseY - curY) * ease;
 
       wrapper.style.left = `${curX}px`;
-      wrapper.style.top = `${curY}px`;
+      wrapper.style.top  = `${curY}px`;
 
       if (spinning) {
         rotation = (rotation + degsPerMs * dt) % 360;
         wrapper.style.transform = `rotate(${rotation}deg)`;
       }
 
-      if (locked && lockedRect) {
-        lockStrength = Math.min(1, lockStrength + dt / (hoverDuration * 1000));
-        const t = lockStrength;
-
-        const freeTargets = [
-          { x: curX - 10, y: curY - 10 },
-          { x: curX + 10, y: curY - 10 },
-          { x: curX + 10, y: curY + 10 },
-          { x: curX - 10, y: curY + 10 },
-        ];
-        const locked4 = [lockedRect.tl, lockedRect.tr, lockedRect.br, lockedRect.bl];
-
+      // Corner animation only relevant in full mode
+      if (cursorStore.mode === 'full') {
+        if (locked && lockedRect) {
+          lockStrength = Math.min(1, lockStrength + dt / (hoverDuration * 1000));
+          const t = lockStrength;
+          const free4 = [
+            { x: curX - 10, y: curY - 10 }, { x: curX + 10, y: curY - 10 },
+            { x: curX + 10, y: curY + 10 }, { x: curX - 10, y: curY + 10 },
+          ];
+          const lock4 = [lockedRect.tl, lockedRect.tr, lockedRect.br, lockedRect.bl];
+          corners.forEach((_, i) => {
+            let tx = free4[i].x + (lock4[i].x - free4[i].x) * t;
+            let ty = free4[i].y + (lock4[i].y - free4[i].y) * t;
+            if (parallaxOn && t >= 1) {
+              const cx = (lockedRect!.tl.x + lockedRect!.tr.x) / 2;
+              const cy = (lockedRect!.tl.y + lockedRect!.bl.y) / 2;
+              tx += (mouseX - cx) * 0.04;
+              ty += (mouseY - cy) * 0.04;
+            }
+            const e2 = Math.min(ease * 1.5, 1);
+            cornerCurrent[i].x += (tx - cornerCurrent[i].x) * e2;
+            cornerCurrent[i].y += (ty - cornerCurrent[i].y) * e2;
+          });
+        } else {
+          lockStrength = Math.max(0, lockStrength - dt / 150);
+          const free4 = [
+            { x: curX - 10, y: curY - 10 }, { x: curX + 10, y: curY - 10 },
+            { x: curX + 10, y: curY + 10 }, { x: curX - 10, y: curY + 10 },
+          ];
+          corners.forEach((_, i) => {
+            cornerCurrent[i].x += (free4[i].x - cornerCurrent[i].x) * ease;
+            cornerCurrent[i].y += (free4[i].y - cornerCurrent[i].y) * ease;
+          });
+        }
         corners.forEach((corner, i) => {
-          let tx = freeTargets[i].x + (locked4[i].x - freeTargets[i].x) * t;
-          let ty = freeTargets[i].y + (locked4[i].y - freeTargets[i].y) * t;
-
-          if (parallaxOn && t >= 1) {
-            const cx = (lockedRect!.tl.x + lockedRect!.tr.x) / 2;
-            const cy = (lockedRect!.tl.y + lockedRect!.bl.y) / 2;
-            tx += (mouseX - cx) * 0.04;
-            ty += (mouseY - cy) * 0.04;
-          }
-
-          const e2 = Math.min(ease * 1.5, 1);
-          cornerCurrent[i].x += (tx - cornerCurrent[i].x) * e2;
-          cornerCurrent[i].y += (ty - cornerCurrent[i].y) * e2;
-        });
-      } else {
-        lockStrength = Math.max(0, lockStrength - dt / 150);
-
-        const freeTargets = [
-          { x: curX - 10, y: curY - 10 },
-          { x: curX + 10, y: curY - 10 },
-          { x: curX + 10, y: curY + 10 },
-          { x: curX - 10, y: curY + 10 },
-        ];
-
-        corners.forEach((corner, i) => {
-          cornerCurrent[i].x += (freeTargets[i].x - cornerCurrent[i].x) * ease;
-          cornerCurrent[i].y += (freeTargets[i].y - cornerCurrent[i].y) * ease;
+          corner.style.transform = `translate(${cornerCurrent[i].x - curX}px, ${cornerCurrent[i].y - curY}px)`;
         });
       }
-
-      corners.forEach((corner, i) => {
-        const dx = cornerCurrent[i].x - curX;
-        const dy = cornerCurrent[i].y - curY;
-        corner.style.transform = `translate(${dx}px, ${dy}px)`;
-      });
 
       rafId = requestAnimationFrame(tick);
     };
 
-    // Init corner positions
+    // Init corners
     corners.forEach((_, i) => {
-      const freeTargets = [
-        { x: curX - 10, y: curY - 10 },
-        { x: curX + 10, y: curY - 10 },
-        { x: curX + 10, y: curY + 10 },
-        { x: curX - 10, y: curY + 10 },
+      const f = [
+        { x: curX - 10, y: curY - 10 }, { x: curX + 10, y: curY - 10 },
+        { x: curX + 10, y: curY + 10 }, { x: curX - 10, y: curY + 10 },
       ];
-      cornerCurrent[i] = { ...freeTargets[i] };
+      cornerCurrent[i] = { ...f[i] };
     });
 
     rafId = requestAnimationFrame(tick);
 
-    const onMouseMove = (e: MouseEvent) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-    };
+    const onMouseMove = (e: MouseEvent) => { mouseX = e.clientX; mouseY = e.clientY; };
     window.addEventListener('mousemove', onMouseMove, { passive: true });
 
     let activeTarget: Element | null = null;
     let activeLeave: (() => void) | null = null;
 
     const detachLeave = () => {
-      if (activeTarget && activeLeave) {
-        activeTarget.removeEventListener('mouseleave', activeLeave);
-        activeLeave = null;
-      }
+      if (activeTarget && activeLeave) activeTarget.removeEventListener('mouseleave', activeLeave);
+      activeLeave  = null;
       activeTarget = null;
     };
 
     const onMouseOver = (e: MouseEvent) => {
+      // Only lock-on in full mode (story/intercom)
+      if (cursorStore.mode !== 'full') return;
+
       let el = e.target as HTMLElement | null;
       while (el && el !== document.body) {
         if (el.matches && el.matches(targetSelector)) break;
@@ -193,46 +207,40 @@ const TargetCursor = ({
       if (el === activeTarget) return;
 
       detachLeave();
-
       activeTarget = el;
-      locked = true;
-      spinning = false;
+      locked       = true;
+      spinning     = false;
       wrapper.style.transform = 'rotate(0deg)';
       rotation = 0;
 
       const r = el.getBoundingClientRect();
       const pad = 5;
       lockedRect = {
-        tl: { x: r.left  - pad,     y: r.top    - pad },
-        tr: { x: r.right + pad,     y: r.top    - pad },
-        br: { x: r.right + pad,     y: r.bottom + pad },
-        bl: { x: r.left  - pad,     y: r.bottom + pad },
+        tl: { x: r.left - pad,  y: r.top    - pad },
+        tr: { x: r.right + pad, y: r.top    - pad },
+        br: { x: r.right + pad, y: r.bottom + pad },
+        bl: { x: r.left - pad,  y: r.bottom + pad },
       };
 
-      const targetColor = cursorColorOnTarget ?? cursorColor;
-      corners.forEach(c => (c.style.borderColor = targetColor));
-      if (dot) dot.style.backgroundColor = targetColor;
+      const tc = cursorColorOnTarget ?? cursorColor;
+      corners.forEach(c => (c.style.borderColor = tc));
+      if (dot) dot.style.backgroundColor = tc;
 
-      const onLeave = () => {
-        unlock();
-        detachLeave();
-      };
+      const onLeave = () => { unlock(); detachLeave(); };
       activeLeave = onLeave;
       el.addEventListener('mouseleave', onLeave);
     };
     window.addEventListener('mouseover', onMouseOver, { passive: true });
 
-    // Fix: clicking should force-unlock so corners don't get stuck
-    const onClick = () => {
-      unlock();
-      detachLeave();
-    };
+    const onClick = () => { unlock(); detachLeave(); };
     window.addEventListener('click', onClick, { passive: true });
 
     const onMouseDown = () => {
+      setPressed(true);
       if (dot) gsap.to(dot, { scale: 0.6, duration: 0.12 });
     };
     const onMouseUp = () => {
+      setPressed(false);
       if (dot) gsap.to(dot, { scale: 1, duration: 0.2 });
     };
     window.addEventListener('mousedown', onMouseDown);
@@ -255,29 +263,27 @@ const TargetCursor = ({
 
   return (
     <div ref={cursorRef} className="target-cursor-wrapper">
-      <div
-        ref={dotRef}
-        className="target-cursor-dot"
-        style={{
-          backgroundColor: cursorColor,
-          width: mode === 'minimal' ? '3px' : '5px',
-          height: mode === 'minimal' ? '3px' : '5px',
-          opacity: mode === 'minimal' ? 0.4 : 1,
-          transition: 'width 0.4s, height 0.4s, opacity 0.4s',
-        }}
-      />
-      {(['corner-tl', 'corner-tr', 'corner-br', 'corner-bl'] as const).map((cls, i) => (
-        <div
-          key={cls}
-          ref={el => { if (el) cornersRef.current[i] = el; }}
-          className={`target-cursor-corner ${cls}`}
-          style={{
-            borderColor: cursorColor,
-            opacity: mode === 'minimal' ? 0 : 1,
-            transition: 'opacity 0.4s',
-          }}
-        />
-      ))}
+      {mode === 'minimal' ? (
+        /* ── GAMEPLAY MODE: glowing hand ── */
+        <HandCursor color={cursorColor} pressed={pressed} />
+      ) : (
+        /* ── STORY / INTERCOM MODE: spinning target brackets ── */
+        <>
+          <div
+            ref={dotRef}
+            className="target-cursor-dot"
+            style={{ backgroundColor: cursorColor }}
+          />
+          {(['corner-tl', 'corner-tr', 'corner-br', 'corner-bl'] as const).map((cls, i) => (
+            <div
+              key={cls}
+              ref={el => { if (el) cornersRef.current[i] = el; }}
+              className={`target-cursor-corner ${cls}`}
+              style={{ borderColor: cursorColor }}
+            />
+          ))}
+        </>
+      )}
     </div>
   );
 };
