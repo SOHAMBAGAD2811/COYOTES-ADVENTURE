@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Leaf } from 'lucide-react';
+import FuzzyText from './FuzzyText';
 
 interface Props {
   onSuccess: () => void;
@@ -57,8 +58,11 @@ export default function BiosphereStage({ onSuccess }: Props) {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center p-8">
       <div className="mb-12 flex flex-col items-center gap-2">
-        <h2 className="flex items-center gap-2 text-2xl font-bold tracking-[0.3em] text-[#00ff88] rng-glitch">
-          <Leaf size={24} /> BIOSPHERE INITIALIZATION
+        <h2 className="flex items-center gap-2 text-2xl font-bold tracking-[0.3em] text-[#00ff88]">
+          <Leaf size={24} /> 
+          <FuzzyText baseIntensity={0.2} hoverIntensity={0.6} color="#00ff88" fontSize="1.5rem" fontWeight="bold">
+            BIOSPHERE INITIALIZATION
+          </FuzzyText>
         </h2>
         <p className="text-xs tracking-widest text-[#00ff88]/60">
           CALIBRATE SOIL NUTRIENTS AND HYDRATION LEVELS

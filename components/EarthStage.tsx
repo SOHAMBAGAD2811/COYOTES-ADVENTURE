@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Leaf } from 'lucide-react';
+import FuzzyText from './FuzzyText';
 
 interface Cell {
   id: number;
@@ -66,7 +67,10 @@ export default function EarthStage({ onSuccess }: Props) {
     <div className="flex h-full w-full flex-col items-center justify-center p-8">
       <div className="mb-10 flex flex-col items-center gap-2">
         <h2 className="flex items-center gap-2 text-2xl font-bold tracking-[0.3em] text-[#a3e635]">
-          <Leaf size={24} /> BIOMASS SYNTHESIZER
+          <Leaf size={24} /> 
+          <FuzzyText baseIntensity={0.2} hoverIntensity={0.6} color="#a3e635" fontSize="1.5rem" fontWeight="bold">
+            BIOMASS SYNTHESIZER
+          </FuzzyText>
         </h2>
         <p className="text-xs tracking-widest text-amber-glow/60">
           CLICK TILES TO ALIGN THE POWER GRID

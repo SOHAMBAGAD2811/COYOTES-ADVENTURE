@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Zap } from 'lucide-react';
+import FuzzyText from './FuzzyText';
 
 interface Props {
   onSuccess: () => void;
@@ -128,8 +129,11 @@ export default function PowerGridStage({ onSuccess }: Props) {
     <div className="flex h-full w-full flex-col items-center justify-center p-6 select-none">
       {/* Header */}
       <div className="mb-6 flex flex-col items-center gap-1">
-        <h2 className="flex items-center gap-2 text-2xl font-bold tracking-[0.3em] text-[#ffb000] rng-glitch">
-          <Zap size={22} /> POWER GRID REWIRING
+        <h2 className="flex items-center gap-2 text-2xl font-bold tracking-[0.3em] text-[#ffb000]">
+          <Zap size={22} /> 
+          <FuzzyText baseIntensity={0.2} hoverIntensity={0.6} color="#ffb000" fontSize="1.5rem" fontWeight="bold">
+            POWER GRID REWIRING
+          </FuzzyText>
         </h2>
         <p className="text-xs tracking-widest text-[#ffb000]/60">
           DRAG EACH WIRE TO ITS MATCHING SOCKET — {completedCount}/{WIRE_COLORS.length} CIRCUITS CLOSED

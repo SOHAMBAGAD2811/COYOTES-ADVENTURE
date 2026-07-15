@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Lock } from 'lucide-react';
+import FuzzyText from './FuzzyText';
 
 interface Props {
   onSuccess: () => void;
@@ -68,8 +69,11 @@ export default function DecryptionStage({ onSuccess }: Props) {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center p-8">
       <div className="mb-12 flex flex-col items-center gap-2">
-        <h2 className="flex items-center gap-2 text-2xl font-bold tracking-[0.3em] text-[#00ff88] rng-glitch">
-          <Lock size={24} /> DECRYPTION SEQUENCE
+        <h2 className="flex items-center gap-2 text-2xl font-bold tracking-[0.3em] text-[#00ff88]">
+          <Lock size={24} /> 
+          <FuzzyText baseIntensity={0.2} hoverIntensity={0.6} color="#00ff88" fontSize="1.5rem" fontWeight="bold">
+            DECRYPTION SEQUENCE
+          </FuzzyText>
         </h2>
         <p className="text-xs tracking-widest text-[#00ffff]/60">
           REPEAT THE SIGNAL PATTERN — LAYER {level}/3

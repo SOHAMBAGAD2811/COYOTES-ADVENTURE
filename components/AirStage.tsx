@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Wind } from 'lucide-react';
+import FuzzyText from './FuzzyText';
 import type { CSSProperties } from 'react';
 
 const horizontalSliderStyle: CSSProperties = {
@@ -64,7 +65,10 @@ export default function AirStage({ onSuccess, setHypoxia }: Props) {
     <div className="flex h-full w-full flex-col items-center justify-center p-8">
       <div className="mb-8 flex flex-col items-center gap-2">
         <h2 className="flex items-center gap-2 text-2xl font-bold tracking-[0.3em] text-[#00ff88]">
-          <Wind size={24} /> OXYGEN SCRUBBERS
+          <Wind size={24} /> 
+          <FuzzyText baseIntensity={0.2} hoverIntensity={0.6} color="#00ff88" fontSize="1.5rem" fontWeight="bold">
+            OXYGEN SCRUBBERS
+          </FuzzyText>
         </h2>
         <p className="text-xs tracking-widest text-amber-glow/60">
           KEEP VALVES IN THE GREEN ZONE

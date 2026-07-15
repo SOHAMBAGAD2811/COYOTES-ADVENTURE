@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Brain, Lightbulb, CheckCircle, XCircle } from 'lucide-react';
+import FuzzyText from './FuzzyText';
 
 interface Props {
   onSuccess: () => void;
@@ -211,8 +212,11 @@ export default function RiddleStage({ onSuccess }: Props) {
     <div className="flex h-full w-full flex-col items-center justify-center p-8">
       {/* Header */}
       <div className="mb-8 flex flex-col items-center gap-2">
-        <h2 className="flex items-center gap-2 text-2xl font-bold tracking-[0.3em] text-[#cc44ff] rng-glitch">
-          <Brain size={24} /> CIPHER INTELLIGENCE TEST
+        <h2 className="flex items-center gap-2 text-2xl font-bold tracking-[0.3em] text-[#cc44ff]">
+          <Brain size={24} /> 
+          <FuzzyText baseIntensity={0.2} hoverIntensity={0.6} color="#cc44ff" fontSize="1.5rem" fontWeight="bold">
+            CIPHER INTELLIGENCE TEST
+          </FuzzyText>
         </h2>
         <p className="text-xs tracking-widest text-[#cc44ff]/60">
           ANSWER THE RIDDLE TO UNLOCK THE NEXT PROTOCOL — {currentIdx + 1}/{riddles.length}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Rocket } from 'lucide-react';
+import FuzzyText from './FuzzyText';
 
 interface Props {
   onSuccess: () => void;
@@ -47,8 +48,11 @@ export default function ThrusterStage({ onSuccess }: Props) {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center p-8">
       <div className="mb-12 flex flex-col items-center gap-2">
-        <h2 className="flex items-center gap-2 text-2xl font-bold tracking-[0.3em] text-[#ffb000] rng-glitch">
-          <Rocket size={24} /> THRUSTER CALIBRATION
+        <h2 className="flex items-center gap-2 text-2xl font-bold tracking-[0.3em] text-[#ffb000]">
+          <Rocket size={24} /> 
+          <FuzzyText baseIntensity={0.2} hoverIntensity={0.6} color="#ffb000" fontSize="1.5rem" fontWeight="bold">
+            THRUSTER CALIBRATION
+          </FuzzyText>
         </h2>
         <p className="text-xs tracking-widest text-[#ff8800]/60">
           KEEP ALIGNMENT CENTERED TO TRAVERSE DEBRIS FIELD

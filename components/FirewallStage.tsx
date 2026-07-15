@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { ShieldAlert, Terminal, AlertTriangle } from 'lucide-react';
+import FuzzyText from './FuzzyText';
 
 interface Props {
   onSuccess: () => void;
@@ -88,8 +89,11 @@ export default function FirewallStage({ onSuccess }: Props) {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center p-8">
       <div className="mb-12 flex flex-col items-center gap-2">
-        <h2 className="flex items-center gap-2 text-2xl font-bold tracking-[0.3em] text-[#ff0055] rng-glitch">
-          <ShieldAlert size={24} /> ICE FIREWALL DETECTED
+        <h2 className="flex items-center gap-2 text-2xl font-bold tracking-[0.3em] text-[#ff0055]">
+          <ShieldAlert size={24} /> 
+          <FuzzyText baseIntensity={0.2} hoverIntensity={0.6} color="#ff0055" fontSize="1.5rem" fontWeight="bold">
+            ICE FIREWALL DETECTED
+          </FuzzyText>
         </h2>
         <p className="text-xs tracking-widest text-[#ff0055]/60">
           ENTER OVERRIDE COMMANDS TO BYPASS
