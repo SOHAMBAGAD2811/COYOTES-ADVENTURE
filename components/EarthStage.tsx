@@ -125,9 +125,31 @@ export default function EarthStage({ onSuccess }: Props) {
               setSolved(true);
               onSuccess();
             }}
-            className="text-[9px] tracking-widest text-amber-glow/30 hover:text-amber-glow/80 transition-colors"
+            className={[
+              // Shape & spacing
+              'relative px-4 py-1.5 text-[9px] tracking-[0.25em] font-bold uppercase',
+              // Border — thin red bracket look
+              'border border-red-500/50 rounded-sm',
+              // Colour
+              'text-red-400/60',
+              // Hover
+              'hover:text-red-300 hover:border-red-400 hover:bg-red-950/40',
+              // Active press
+              'active:scale-95',
+              // Transitions
+              'transition-all duration-200',
+              // Subtle pulse glow on the border
+              'shadow-[0_0_6px_0px_rgba(239,68,68,0.15)] hover:shadow-[0_0_12px_2px_rgba(239,68,68,0.35)]',
+              // Cursor
+              'cursor-pointer',
+            ].join(' ')}
           >
-            [ EMERGENCY OVERRIDE ]
+            {/* Corner accent marks */}
+            <span className="absolute top-0 left-0 w-1.5 h-1.5 border-t border-l border-red-400/70" />
+            <span className="absolute top-0 right-0 w-1.5 h-1.5 border-t border-r border-red-400/70" />
+            <span className="absolute bottom-0 left-0 w-1.5 h-1.5 border-b border-l border-red-400/70" />
+            <span className="absolute bottom-0 right-0 w-1.5 h-1.5 border-b border-r border-red-400/70" />
+            ⚠ EMERGENCY OVERRIDE
           </button>
         )}
       </div>
