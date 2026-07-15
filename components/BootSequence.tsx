@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PixelButton from './PixelButton';
+import LetterGlitch from './LetterGlitch';
 
 interface BootSequenceProps {
   onBootComplete: () => void;
@@ -131,6 +132,15 @@ export default function BootSequence({ onBootComplete }: BootSequenceProps) {
           transition={{ duration: 0.65, ease: 'easeInOut' }}
           className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black font-mono select-none overflow-hidden"
         >
+          <LetterGlitch
+            glitchSpeed={50}
+            centerVignette={true}
+            outerVignette={false}
+            smooth={false}
+            glitchColors={["#ffb000", "#ff0055", "#00ff88"]}
+            className="opacity-20 absolute inset-0 z-0 pointer-events-none"
+          />
+
           {/* ── CRT scanlines ── */}
           <div
             className="pointer-events-none absolute inset-0 z-10"
