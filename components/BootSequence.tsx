@@ -138,7 +138,7 @@ export default function BootSequence({ onBootComplete }: BootSequenceProps) {
             outerVignette={false}
             smooth={false}
             glitchColors={["#ffb000", "#ff0055", "#00ff88"]}
-            className="opacity-40 absolute inset-0 z-0 pointer-events-none"
+            className="opacity-10 absolute inset-0 z-0 pointer-events-none"
           />
 
           {/* ── CRT scanlines ── */}
