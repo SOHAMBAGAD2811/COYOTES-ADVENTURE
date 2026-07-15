@@ -1,29 +1,33 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useInterceptState } from '@/lib/useInterceptState';
-import BootSequence from '@/components/BootSequence';
-import TopBar from '@/components/TopBar';
-import TopographicalScanner from '@/components/TopographicalScanner';
-import HeatTelemetry from '@/components/HeatTelemetry';
-import FrequencySlider from '@/components/FrequencySlider';
-import OverdriveBreach from '@/components/OverdriveBreach';
-import MissionLog from '@/components/MissionLog';
-import EvolutionSlot from '@/components/EvolutionSlot';
-import IntercomDialogueGeneric from '@/components/IntercomDialogueGeneric';
-import StoryCardsEnd from '@/components/StoryCardsEnd';
-import AirStage from '@/components/AirStage';
-import EarthStage from '@/components/EarthStage';
-import StoryCards from '@/components/StoryCards';
-import FirewallStage from '@/components/FirewallStage';
-import PowerGridStage from '@/components/PowerGridStage';
-import DecryptionStage from '@/components/DecryptionStage';
-import ThrusterStage from '@/components/ThrusterStage';
-import BiosphereStage from '@/components/BiosphereStage';
-import RiddleStage from '@/components/RiddleStage';
 import { cursorStore } from '@/lib/cursorStore';
 
+// ── Eagerly loaded (always needed immediately) ──────────────────────────────
+import BootSequence from '@/components/BootSequence';
+import TopBar from '@/components/TopBar';
+import StoryCards from '@/components/StoryCards';
+
+// ── Lazily loaded (only needed when their stage is active) ──────────────────
+const TopographicalScanner  = dynamic(() => import('@/components/TopographicalScanner'),  { ssr: false });
+const HeatTelemetry         = dynamic(() => import('@/components/HeatTelemetry'),          { ssr: false });
+const FrequencySlider       = dynamic(() => import('@/components/FrequencySlider'),        { ssr: false });
+const OverdriveBreach       = dynamic(() => import('@/components/OverdriveBreach'),        { ssr: false });
+const MissionLog            = dynamic(() => import('@/components/MissionLog'),             { ssr: false });
+const EvolutionSlot         = dynamic(() => import('@/components/EvolutionSlot'),          { ssr: false });
+const IntercomDialogueGeneric = dynamic(() => import('@/components/IntercomDialogueGeneric'), { ssr: false });
+const StoryCardsEnd         = dynamic(() => import('@/components/StoryCardsEnd'),          { ssr: false });
+const AirStage              = dynamic(() => import('@/components/AirStage'),               { ssr: false });
+const EarthStage            = dynamic(() => import('@/components/EarthStage'),             { ssr: false });
+const FirewallStage         = dynamic(() => import('@/components/FirewallStage'),          { ssr: false });
+const PowerGridStage        = dynamic(() => import('@/components/PowerGridStage'),         { ssr: false });
+const DecryptionStage       = dynamic(() => import('@/components/DecryptionStage'),        { ssr: false });
+const ThrusterStage         = dynamic(() => import('@/components/ThrusterStage'),          { ssr: false });
+const BiosphereStage        = dynamic(() => import('@/components/BiosphereStage'),         { ssr: false });
+const RiddleStage           = dynamic(() => import('@/components/RiddleStage'),            { ssr: false });
 
 const panelVariants = {
   hidden: { opacity: 0, y: 12, scale: 0.97 },
@@ -84,7 +88,7 @@ export default function Home() {
     cursorStore.setMode(isGameplay ? 'minimal' : 'full');
   }, [s.missionStage]);
 
-  // Ambient dust particles
+  // Ambient dust particles — memoised so they never re-randomise on re-render
   const dustParticles = useMemo(
     () =>
       Array.from({ length: 12 }).map((_, i) => ({
@@ -141,7 +145,7 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* Ambient dust particles */}
+      {/* Ambient dust particles — rendered as pure CSS, no JS loop */}
       {dustParticles.map((p) => (
         <div
           key={p.id}

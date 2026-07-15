@@ -252,16 +252,16 @@ class AudioEngine {
     switch (track) {
       case 'intro':
         // Deep pulsing drone with some data crunches
-        this.addDrone(55, 'sawtooth', 0.5, 0.15); // A1
+        this.addDrone(55, 'triangle', 0.5, 0.15); // A1
         this.addDrone(110, 'sine', 0.2, 0.1); // A2
-        this.addArp([880, 0, 1760, 0, 0, 440], 120, 'square', 0.02);
+        this.addArp([880, 0, 1760, 0, 0, 440], 120, 'sine', 0.04);
         break;
 
       case 'power':
-        // Electric buzzing, high tension
-        this.addDrone(65.41, 'square', 4, 0.1); // C2 fast pulse
-        this.addDrone(130.81, 'sawtooth', 8, 0.05); // C3 faster pulse
-        this.addArp([261.63, 392.00, 311.13, 466.16], 200, 'square', 0.04);
+        // Deep power hum, high tension but smooth
+        this.addDrone(65.41, 'triangle', 2, 0.15); // C2 slow pulse
+        this.addDrone(130.81, 'sine', 4, 0.1); // C3 faster pulse
+        this.addArp([261.63, 392.00, 311.13, 466.16], 300, 'sine', 0.06);
         break;
 
       case 'decryption':
@@ -274,8 +274,8 @@ class AudioEngine {
       case 'thrusters':
         // Deep rumbling, fast arpeggiator
         this.addNoiseSweep('pink', 50, 400, 2, 0.2); // Engine rumble
-        this.addDrone(41.20, 'sawtooth', 0.5, 0.15); // E1
-        this.addArp([164.81, 196.00, 246.94, 196.00], 150, 'square', 0.05); // E3 minor pentatonic
+        this.addDrone(41.20, 'triangle', 0.5, 0.15); // E1
+        this.addArp([164.81, 196.00, 246.94, 196.00], 150, 'sine', 0.08); // E3 minor pentatonic
         break;
 
       case 'air':
@@ -295,9 +295,9 @@ class AudioEngine {
         break;
 
       case 'firewall':
-        // Aggressive alarms, fast tempo
-        this.addDrone(55, 'sawtooth', 8, 0.15); // A1 vibrating fast
-        this.addArp([440, 466.16], 120, 'square', 0.08); // A4, A#4 alarm
+        // Aggressive alarms, but smoother tone
+        this.addDrone(55, 'triangle', 4, 0.15); // A1 vibrating fast but not buzzing
+        this.addArp([440, 466.16], 150, 'sine', 0.1); // A4, A#4 alarm
         this.addNoiseSweep('white', 1000, 3000, 0.5, 0.05); // Fast hi-hat like
         break;
 
