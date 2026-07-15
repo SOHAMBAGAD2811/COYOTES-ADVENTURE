@@ -22,6 +22,7 @@ import DecryptionStage from '@/components/DecryptionStage';
 import ThrusterStage from '@/components/ThrusterStage';
 import BiosphereStage from '@/components/BiosphereStage';
 import RiddleStage from '@/components/RiddleStage';
+import TargetCursor from '@/components/TargetCursor';
 
 const panelVariants = {
   hidden: { opacity: 0, y: 12, scale: 0.97 },
@@ -103,6 +104,12 @@ export default function Home() {
         s.cameraShake ? 'camera-shake' : ''
       } transition-[filter] duration-700 ${hypoxia ? 'grayscale blur-[1px]' : ''}`}
     >
+      <TargetCursor 
+        targetSelector="button, a, [role='button'], .cursor-pointer, input[type='range']"
+        cursorColor="#ffb000"
+        cursorColorOnTarget="#00ff88"
+        spinDuration={3}
+      />
       {/* CRT overlays */}
       <div className="grain-overlay" />
       <div className="crt-overlay" />
