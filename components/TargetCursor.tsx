@@ -92,7 +92,7 @@ const TargetCursor = ({
         // reset rotation cleanly
         rotation = 0;
       } else {
-        wrapper.style.transform = 'none';
+        wrapper.style.transform = `translate3d(${curX}px, ${curY}px, 0)`;
       }
     });
 
@@ -116,18 +116,22 @@ const TargetCursor = ({
     const tick = (now: number) => {
       const dt  = Math.min(now - lastTime, 50);
       lastTime  = now;
-      const ease = 1 - Math.pow(0.008, dt / 1000);
+      const ease = 1 - Math.pow(0.001, dt / 1000);
 
-      curX += (mouseX - curX) * ease;
-      curY += (mouseY - curY) * ease;
+      curX = mouseX;
+      curY = mouseY;
 
-      wrapper.style.left = `${curX}px`;
-      wrapper.style.top  = `${curY}px`;
+      let transformStr = `translate3d(${curX}px, ${curY}px, 0)`;
 
       if (spinning) {
         rotation = (rotation + degsPerMs * dt) % 360;
-        wrapper.style.transform = `rotate(${rotation}deg)`;
+        transformStr += ` rotate(${rotation}deg)`;
+      } else if (wrapper.style.transform.includes('rotate')) {
+         // Keep it at 0deg if it was rotated before
+         transformStr += ` rotate(0deg)`;
       }
+
+      wrapper.style.transform = transformStr;
 
       // Corner animation only relevant in full mode
       if (cursorStore.mode === 'full') {
@@ -210,7 +214,7 @@ const TargetCursor = ({
       activeTarget = el;
       locked       = true;
       spinning     = false;
-      wrapper.style.transform = 'rotate(0deg)';
+      wrapper.style.transform = `translate3d(${curX}px, ${curY}px, 0) rotate(0deg)`;
       rotation = 0;
 
       const r = el.getBoundingClientRect();
