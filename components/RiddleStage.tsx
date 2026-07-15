@@ -4,162 +4,62 @@ import { useState, useEffect, useRef } from 'react';
 import { Brain, Lightbulb, CheckCircle, XCircle } from 'lucide-react';
 import FuzzyText from './FuzzyText';
 
+interface BioTargets {
+  ph: number;
+  nitrogen: number;
+  water: number;
+}
+
 interface Props {
   onSuccess: () => void;
+  bioTargets: BioTargets;
 }
 
 interface Riddle {
   category: string;
   question: string;
   hints: string[];
-  answer: string | string[]; // support multiple accepted answers
-  answerDisplay: string;     // shown after correct
+  answer: string[];
+  answerDisplay: string;
 }
 
-const RIDDLE_POOL: Riddle[] = [
-  // ── Math ────────────────────────────────────────────────────────
-  {
-    category: 'MATH',
-    question: 'A convoy has 12 crates. Each crate holds 8 water tanks. 3 crates are damaged. How many tanks are accessible?',
-    hints: ['Subtract damaged crates first', 'You have 9 usable crates', 'Multiply 9 × 8'],
-    answer: '72',
-    answerDisplay: '72 TANKS',
-  },
-  {
-    category: 'MATH',
-    question: 'If the temperature drops 4°C every hour, and it starts at 28°C, what is it after 9 hours?',
-    hints: ['4 × 9 = 36', 'Subtract from starting temperature', '28 − 36 = ?'],
-    answer: ['-8', 'negative 8', '-8c', '-8°c'],
-    answerDisplay: '-8°C',
-  },
-  {
-    category: 'MATH',
-    question: 'A signal repeats every 13 seconds. You have 3 minutes. How many full signals fit in that window?',
-    hints: ['3 minutes = 180 seconds', 'Divide 180 ÷ 13', 'Round down to the nearest whole number'],
-    answer: '13',
-    answerDisplay: '13 SIGNALS',
-  },
-  {
-    category: 'MATH',
-    question: 'The Aegis convoy moves at 60 km/h. Oasis City is 90 km away. How many minutes until it arrives?',
-    hints: ['Time = Distance ÷ Speed', '90 ÷ 60 = 1.5 hours', '1.5 hours = ? minutes'],
-    answer: ['90', '90 minutes'],
-    answerDisplay: '90 MINUTES',
-  },
-  {
-    category: 'MATH',
-    question: 'You have 256 bytes of bandwidth. Each packet is 16 bytes. How many packets can you send?',
-    hints: ['This is a division problem', '256 ÷ 16', 'Think in powers of 2'],
-    answer: '16',
-    answerDisplay: '16 PACKETS',
-  },
-  // ── Logic ────────────────────────────────────────────────────────
-  {
-    category: 'LOGIC',
-    question: 'I have cities, but no houses live there. I have mountains, but no trees grow there. I have water, but no fish swim there. What am I?',
-    hints: ['You use me to navigate', 'I represent the world but am flat', 'Explorers carry me'],
-    answer: ['map', 'a map'],
-    answerDisplay: 'A MAP',
-  },
-  {
-    category: 'LOGIC',
-    question: 'The more you take, the more you leave behind. What am I?',
-    hints: ['Think about movement', 'You make them with your feet', 'They are impressions in the ground'],
-    answer: ['footsteps', 'steps', 'foot steps'],
-    answerDisplay: 'FOOTSTEPS',
-  },
-  {
-    category: 'LOGIC',
-    question: 'A hacker encodes a message: 1=A, 2=B... What does 3-15-25-15-20-5 spell?',
-    hints: ['Match each number to a letter', '3=C, 15=O', '25=Y, 20=T, 5=E'],
-    answer: ['coyote', 'c o y o t e'],
-    answerDisplay: 'COYOTE',
-  },
-  // ── Science ─────────────────────────────────────────────────────
-  {
-    category: 'SCIENCE',
-    question: 'What element makes up about 78% of Earth\'s atmosphere by volume?',
-    hints: ['It is not oxygen', 'Plants do not use it directly for photosynthesis', 'Its atomic number is 7'],
-    answer: ['nitrogen', 'n2', 'n₂'],
-    answerDisplay: 'NITROGEN',
-  },
-  {
-    category: 'SCIENCE',
-    question: 'At what temperature in Celsius does water boil at standard atmospheric pressure?',
-    hints: ['Above body temperature', 'Below 200°C', 'A round number'],
-    answer: ['100', '100c', '100°c', '100 degrees'],
-    answerDisplay: '100°C',
-  },
-  {
-    category: 'SCIENCE',
-    question: 'How many bones are in the adult human body?',
-    hints: ['More than 100', 'Less than 250', 'Between 200 and 210'],
-    answer: ['206', '206 bones'],
-    answerDisplay: '206 BONES',
-  },
-  {
-    category: 'SCIENCE',
-    question: 'What is the speed of light in a vacuum, in km/s (rounded to nearest thousand)?',
-    hints: ['It is approximately 300,000 km/s', 'Light travels from Earth to Moon in ~1.3 seconds', 'Often written as 3 × 10⁵ km/s'],
-    answer: ['300000', '300,000', '299792', '299,792'],
-    answerDisplay: '~300,000 KM/S',
-  },
-  // ── Sequence / Pattern ──────────────────────────────────────────
-  {
-    category: 'PATTERN',
-    question: 'Complete the sequence: 2, 4, 8, 16, 32, ___',
-    hints: ['Each number doubles', '32 × 2 = ?', 'Powers of 2'],
-    answer: ['64'],
-    answerDisplay: '64',
-  },
-  {
-    category: 'PATTERN',
-    question: 'Complete the Fibonacci-style sequence: 1, 1, 2, 3, 5, 8, 13, ___',
-    hints: ['Each number = sum of the two before it', '8 + 13 = ?', 'Add the last two numbers'],
-    answer: ['21'],
-    answerDisplay: '21',
-  },
-  {
-    category: 'PATTERN',
-    question: 'What comes next: MON, TUE, WED, THU, ___',
-    hints: ['Days of the week', 'After Thursday...', 'It starts with F'],
-    answer: ['fri', 'friday', 'FRI'],
-    answerDisplay: 'FRI',
-  },
-  // ── Wordplay ────────────────────────────────────────────────────
-  {
-    category: 'WORDPLAY',
-    question: 'I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?',
-    hints: ['Mountains make me', 'I repeat your words back', 'Call out in a canyon to find me'],
-    answer: ['echo', 'an echo'],
-    answerDisplay: 'AN ECHO',
-  },
-  {
-    category: 'WORDPLAY',
-    question: 'What has keys but no locks, space but no room, and you can enter but can\'t go inside?',
-    hints: ['You use it every day', 'It is electronic', 'You are possibly using one right now'],
-    answer: ['keyboard', 'a keyboard'],
-    answerDisplay: 'A KEYBOARD',
-  },
-];
-
-function pickRiddles(n: number): Riddle[] {
-  const shuffled = [...RIDDLE_POOL].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, n);
+function generateRiddles(targets: BioTargets): Riddle[] {
+  return [
+    {
+      category: 'BIOMETRICS',
+      question: `Soil analysis complete. Base pH is 4.0. The terraformer requires exactly ${(targets.ph - 4.0).toFixed(1)} additional pH units to neutralize xenotoxins. What is the target pH?`,
+      hints: ['Add the two numbers together', `4.0 + ${(targets.ph - 4.0).toFixed(1)}`],
+      answer: [targets.ph.toFixed(1), targets.ph.toString()],
+      answerDisplay: `${targets.ph.toFixed(1)} pH`,
+    },
+    {
+      category: 'ATMOSPHERICS',
+      question: `Atmospheric mix is unbalanced. We have 100% capacity. If ${100 - targets.nitrogen}% is allocated to oxygen and argon, what percentage remains for Nitrogen?`,
+      hints: ['Subtract from 100', `100 - ${100 - targets.nitrogen}`],
+      answer: [targets.nitrogen.toString(), `${targets.nitrogen}%`],
+      answerDisplay: `${targets.nitrogen}% NITROGEN`,
+    },
+    {
+      category: 'HYDRATION',
+      question: `Reservoir tank A holds ${targets.water - 15}%. Tank B holds 15%. Tank C is empty. If we combine them for the biosphere, what is the total water percentage?`,
+      hints: ['Add the percentages of Tank A and Tank B', `${targets.water - 15} + 15`],
+      answer: [targets.water.toString(), `${targets.water}%`],
+      answerDisplay: `${targets.water}% WATER`,
+    }
+  ];
 }
 
 function normalize(s: string) {
   return s.toLowerCase().trim().replace(/[^a-z0-9 ]/g, '');
 }
 
-function checkAnswer(input: string, answer: string | string[]): boolean {
+function checkAnswer(input: string, answer: string[]): boolean {
   const norm = normalize(input);
-  const accepted = Array.isArray(answer) ? answer : [answer];
-  return accepted.some(a => normalize(a) === norm || normalize(a).includes(norm) && norm.length > 3);
+  return answer.some(a => normalize(a) === norm || (normalize(a).includes(norm) && norm.length > 3));
 }
 
-export default function RiddleStage({ onSuccess }: Props) {
-  const [riddles] = useState(() => pickRiddles(3));
+export default function RiddleStage({ onSuccess, bioTargets }: Props) {
+  const [riddles] = useState(() => generateRiddles(bioTargets));
   const [currentIdx, setCurrentIdx] = useState(0);
   const [hintsRevealed, setHintsRevealed] = useState(0);
   const [input, setInput] = useState('');

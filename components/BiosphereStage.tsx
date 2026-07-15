@@ -4,13 +4,18 @@ import { useState, useEffect, useRef } from 'react';
 import { Leaf } from 'lucide-react';
 import FuzzyText from './FuzzyText';
 
-interface Props {
-  onSuccess: () => void;
+interface BioTargets {
+  ph: number;
+  nitrogen: number;
+  water: number;
 }
 
-const TARGETS = { ph: 7.2, nitrogen: 65, water: 80 };
+interface Props {
+  onSuccess: () => void;
+  bioTargets: BioTargets;
+}
 
-export default function BiosphereStage({ onSuccess }: Props) {
+export default function BiosphereStage({ onSuccess, bioTargets }: Props) {
   const [ph, setPh] = useState(5.0);
   const [nitrogen, setNitrogen] = useState(20);
   const [water, setWater] = useState(40);
@@ -33,9 +38,9 @@ export default function BiosphereStage({ onSuccess }: Props) {
   // Single stable interval — reads values from refs
   useEffect(() => {
     const t = setInterval(() => {
-      const phGood = Math.abs(phRef.current - TARGETS.ph) < 0.3;
-      const nGood = Math.abs(nitrogenRef.current - TARGETS.nitrogen) < 5;
-      const wGood = Math.abs(waterRef.current - TARGETS.water) < 5;
+      const phGood = Math.abs(phRef.current - bioTargets.ph) < 0.3;
+      const nGood = Math.abs(nitrogenRef.current - bioTargets.nitrogen) < 5;
+      const wGood = Math.abs(waterRef.current - bioTargets.water) < 5;
 
       if (phGood && nGood && wGood) {
         setProgress(p => {
@@ -51,9 +56,9 @@ export default function BiosphereStage({ onSuccess }: Props) {
     return () => clearInterval(t);
   }, []); // runs once only — uses refs for latest values
 
-  const phGood = Math.abs(ph - TARGETS.ph) < 0.3;
-  const nGood = Math.abs(nitrogen - TARGETS.nitrogen) < 5;
-  const wGood = Math.abs(water - TARGETS.water) < 5;
+  const phGood = Math.abs(ph - bioTargets.ph) < 0.3;
+  const nGood = Math.abs(nitrogen - bioTargets.nitrogen) < 5;
+  const wGood = Math.abs(water - bioTargets.water) < 5;
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center p-8">
@@ -79,7 +84,7 @@ export default function BiosphereStage({ onSuccess }: Props) {
           <input type="range" min={0} max={14} step={0.1} value={ph}
             onChange={e => setPh(Number(e.target.value))} className="freq-slider w-full" />
           <div className={`text-[10px] mt-2 ${phGood ? 'text-[#00ff88]' : 'text-amber-glow/40'}`}>
-            TARGET: {TARGETS.ph.toFixed(1)} {phGood ? '✓' : ''}
+            TARGET: {phGood ? `${bioTargets.ph.toFixed(1)} ✓` : 'CLASSIFIED'}
           </div>
         </div>
 
@@ -92,7 +97,7 @@ export default function BiosphereStage({ onSuccess }: Props) {
           <input type="range" min={0} max={100} value={nitrogen}
             onChange={e => setNitrogen(Number(e.target.value))} className="freq-slider w-full" />
           <div className={`text-[10px] mt-2 ${nGood ? 'text-[#00ff88]' : 'text-amber-glow/40'}`}>
-            TARGET: {TARGETS.nitrogen} {nGood ? '✓' : ''}
+            TARGET: {nGood ? `${bioTargets.nitrogen} ✓` : 'CLASSIFIED'}
           </div>
         </div>
 
@@ -105,7 +110,7 @@ export default function BiosphereStage({ onSuccess }: Props) {
           <input type="range" min={0} max={100} value={water}
             onChange={e => setWater(Number(e.target.value))} className="freq-slider w-full" />
           <div className={`text-[10px] mt-2 ${wGood ? 'text-[#00ff88]' : 'text-amber-glow/40'}`}>
-            TARGET: {TARGETS.water} {wGood ? '✓' : ''}
+            TARGET: {wGood ? `${bioTargets.water} ✓` : 'CLASSIFIED'}
           </div>
         </div>
       </div>
@@ -122,7 +127,7 @@ export default function BiosphereStage({ onSuccess }: Props) {
           />
         </div>
         <div className="mt-3 text-center text-[10px] text-[#00ff88]/40 tracking-widest">
-          {phGood && nGood && wGood ? 'ALL PARAMETERS LOCKED — INITIALIZING...' : 'ADJUST ALL THREE SLIDERS TO TARGET VALUES'}
+          {phGood && nGood && wGood ? 'ALL PARAMETERS LOCKED — INITIALIZING...' : 'REFER TO CIPHER LOGS TO DECRYPT TARGET PARAMETERS'}
         </div>
       </div>
     </div>

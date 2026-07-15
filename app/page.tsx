@@ -228,11 +228,11 @@ export default function Home() {
         </div>
       ) : s.missionStage === 'riddle' ? (
         <div className="flex-1">
-          <RiddleStage onSuccess={s.completeRiddle} />
+          <RiddleStage onSuccess={s.completeRiddle} bioTargets={s.bioTargets} />
         </div>
       ) : s.missionStage === 'biosphere' ? (
         <div className="flex-1">
-          <BiosphereStage onSuccess={s.completeBiosphere} />
+          <BiosphereStage onSuccess={s.completeBiosphere} bioTargets={s.bioTargets} />
         </div>
       ) : s.missionStage === 'earth' ? (
         <div className="flex-1">

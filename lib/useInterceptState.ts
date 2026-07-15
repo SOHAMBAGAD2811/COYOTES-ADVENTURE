@@ -73,6 +73,12 @@ export function useInterceptState() {
   const [cameraShake, setCameraShake] = useState(false);
   const [terminalFlash, setTerminalFlash] = useState<'idle' | 'success' | 'fail'>('idle');
 
+  const [bioTargets, setBioTargets] = useState(() => ({
+    ph: Number((6.0 + Math.random() * 2.5).toFixed(1)),
+    nitrogen: Math.floor(40 + Math.random() * 40),
+    water: Math.floor(50 + Math.random() * 40),
+  }));
+
   const failureTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shakeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -304,6 +310,11 @@ export function useInterceptState() {
     setMissionLog([]);
     setCameraShake(false);
     setTerminalFlash('idle');
+    setBioTargets({
+      ph: Number((6.0 + Math.random() * 2.5).toFixed(1)),
+      nitrogen: Math.floor(40 + Math.random() * 40),
+      water: Math.floor(50 + Math.random() * 40),
+    });
     wasSignalLockedRef.current = false;
     heatWarnedRef.current = false;
     prevSystemFailureRef.current = false;
@@ -325,7 +336,7 @@ export function useInterceptState() {
     breachFlash, breachAttempts, attemptBreach, sweetSpot, restart,
     booted, bootComplete, storyComplete, setStoryComplete,
     missionLog, addLogEntry, cameraShake, terminalFlash,
-    missionStage, advanceStage,
+    missionStage, advanceStage, bioTargets,
     completeFirewall, completePower, completeDecryption, completeAirStage,
     completeThruster, completeRiddle, completeBiosphere, completeEarthStage,
     finishMission, finalComplete,
