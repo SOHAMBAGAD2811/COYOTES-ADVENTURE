@@ -56,6 +56,14 @@ const FuzzyText = ({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    // Visibility observer — stop the RAF loop when the canvas is off-screen
+    let isVisible = true;
+    const visibilityObserver = new IntersectionObserver(
+      ([entry]) => { isVisible = entry.isIntersecting; },
+      { threshold: 0 }
+    );
+    visibilityObserver.observe(canvas);
+
     const init = async () => {
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
@@ -162,7 +170,12 @@ const FuzzyText = ({
       let currentIntensity = baseIntensity;
       let targetIntensity = baseIntensity;
       let lastFrameTime = 0;
-      const frameDuration = 1000 / fps;
+
+      // When not hovered, render at a lower FPS cap (20fps) to save CPU.
+      // When hovered, switch to the user-requested fps for smooth response.
+      const idleFps = Math.min(fps, 20);
+      const activeFps = fps;
+      let frameDuration = 1000 / idleFps;
 
       const startGlitchLoop = () => {
         if (!glitchMode || isCancelled) return;
@@ -180,6 +193,12 @@ const FuzzyText = ({
 
       const run = (timestamp: number) => {
         if (isCancelled) return;
+
+        // Skip rendering entirely when off-screen
+        if (!isVisible) {
+          animationFrameId = window.requestAnimationFrame(run);
+          return;
+        }
 
         if (timestamp - lastFrameTime < frameDuration) {
           animationFrameId = window.requestAnimationFrame(run);
@@ -216,25 +235,20 @@ const FuzzyText = ({
         }
 
         if (direction === 'horizontal') {
-          // Horizontal: shift each row left/right
           for (let j = 0; j < tightHeight; j++) {
             const dx = Math.floor(currentIntensity * (Math.random() - 0.5) * fuzzRange);
             ctx.drawImage(offscreen, 0, j, offscreenWidth, 1, dx, j, offscreenWidth, 1);
           }
         } else if (direction === 'vertical') {
-          // Vertical: shift each column up/down
           for (let i = 0; i < offscreenWidth; i++) {
             const dy = Math.floor(currentIntensity * (Math.random() - 0.5) * fuzzRange);
             ctx.drawImage(offscreen, i, 0, 1, tightHeight, i, dy, 1, tightHeight);
           }
         } else {
-          // Both: shift each row horizontally, then shift each column vertically
-          // First pass: draw with horizontal displacement to a temp position
           for (let j = 0; j < tightHeight; j++) {
             const dx = Math.floor(currentIntensity * (Math.random() - 0.5) * fuzzRange);
             ctx.drawImage(offscreen, 0, j, offscreenWidth, 1, dx, j, offscreenWidth, 1);
           }
-          // Second pass: read what we just drew and apply vertical displacement
           const tempData = ctx.getImageData(0, 0, offscreenWidth + fuzzRange, tightHeight + fuzzRange);
           ctx.clearRect(
             -fuzzRange - 20,
@@ -264,11 +278,17 @@ const FuzzyText = ({
         const rect = canvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-        isHovering = isInsideTextArea(x, y);
+        const nowHovering = isInsideTextArea(x, y);
+        if (nowHovering !== isHovering) {
+          isHovering = nowHovering;
+          // Switch FPS tier: active when hovered, idle otherwise
+          frameDuration = 1000 / (isHovering ? activeFps : idleFps);
+        }
       };
 
       const handleMouseLeave = () => {
         isHovering = false;
+        frameDuration = 1000 / idleFps;
       };
 
       const handleClick = () => {
@@ -292,6 +312,7 @@ const FuzzyText = ({
 
       const handleTouchEnd = () => {
         isHovering = false;
+        frameDuration = 1000 / idleFps;
       };
 
       if (enableHover) {
@@ -310,6 +331,7 @@ const FuzzyText = ({
         clearTimeout(glitchTimeoutId);
         clearTimeout(glitchEndTimeoutId);
         clearTimeout(clickTimeoutId);
+        visibilityObserver.disconnect();
         if (enableHover) {
           canvas.removeEventListener('mousemove', handleMouseMove);
           canvas.removeEventListener('mouseleave', handleMouseLeave);
@@ -321,7 +343,7 @@ const FuzzyText = ({
         }
       };
 
-      // @ts-ignore - attaching cleanup to canvas for effect cleanup
+      // @ts-ignore
       canvas.cleanupFuzzyText = cleanup;
     };
 
@@ -333,6 +355,7 @@ const FuzzyText = ({
       clearTimeout(glitchTimeoutId);
       clearTimeout(glitchEndTimeoutId);
       clearTimeout(clickTimeoutId);
+      visibilityObserver.disconnect();
       // @ts-ignore
       if (canvas && canvas.cleanupFuzzyText) {
         // @ts-ignore

@@ -68,6 +68,9 @@ body {
 }
 .screen-flicker {
   animation: screen-flicker 4s infinite;
+  /* Hint to browser: only opacity changes — skip layout & paint steps */
+  will-change: opacity;
+  contain: strict;
 }
 
 @keyframes rng-text-glitch {
@@ -132,6 +135,7 @@ body {
 }
 .camera-shake {
   animation: camera-shake 0.5s ease-in-out;
+  will-change: transform;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -163,6 +167,7 @@ body {
 .glitch-text {
   position: relative;
   animation: glitch-skew 8s infinite;
+  will-change: transform;
 }
 .glitch-text::before,
 .glitch-text::after {
@@ -225,17 +230,22 @@ body {
 
 /* ═══════════════════════════════════════════════════════════════════════════
    RADAR SWEEP — rotating conic gradient
+   Refactored: use a contained square (not 300%x300%) with will-change:transform
+   so the browser promotes it to its own GPU layer and avoids large repaints.
    ═══════════════════════════════════════════════════════════════════════════ */
 @keyframes radar-sweep {
-  0%   { transform: translate(-50%, -50%) rotate(0deg); }
-  100% { transform: translate(-50%, -50%) rotate(360deg); }
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 .radar-sweep {
   position: absolute;
-  width: 300%;
-  height: 300%;
+  /* Size to cover the diagonal of the parent (max square that fills it) */
+  width: 141.5%;
+  height: 141.5%;
   top: 50%;
   left: 50%;
+  margin-top: -70.75%;
+  margin-left: -70.75%;
   pointer-events: none;
   background: conic-gradient(
     from 0deg,
@@ -245,6 +255,9 @@ body {
   );
   animation: radar-sweep 4s linear infinite;
   opacity: 0.6;
+  will-change: transform;
+  /* Isolate this layer from the parent paint context */
+  contain: layout paint;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -400,6 +413,8 @@ body {
   animation-delay: var(--dust-delay, 0s);
   left: var(--dust-x, 50%);
   bottom: -10px;
+  /* GPU-promote each particle to its own compositor layer */
+  will-change: transform, opacity;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -679,6 +694,25 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   STORY CARDS — star background
+   Pure CSS animation replaces 60 Framer Motion JS animation instances.
+   GPU-composited via will-change:opacity,transform.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@keyframes star-twinkle {
+  0%, 100% { opacity: 0.1; transform: scale(0.8); }
+  50%       { opacity: 1;   transform: scale(1.2); }
+}
+.story-star {
+  position: absolute;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+  animation: star-twinkle var(--star-duration, 3s) ease-in-out infinite;
+  animation-delay: var(--star-delay, 0s);
+  will-change: opacity, transform;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    ACCESSIBILITY: REDUCED MOTION
    Disable heavy animations for users who prefer it.
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -699,7 +733,8 @@ body {
   .pulse-ring,
   .waveform-bar,
   .text-pulse-amber,
-  .water-wave {
+  .water-wave,
+  .story-star {
     animation: none !important;
   }
 

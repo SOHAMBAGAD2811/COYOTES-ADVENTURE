@@ -102,33 +102,36 @@ export function useInterceptState() {
     ]);
   }, []);
 
-  useEffect(() => {
-    const t = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
-
-  useEffect(() => {
-    if (!booted || missionStatus !== 'active' || missionStage.includes('intercom')) return;
-    const t = setInterval(() => {
-      setBattery((b) => Math.max(4, b - Math.random() * 0.4));
-    }, 4000);
-    return () => clearInterval(t);
-  }, [booted, missionStatus, missionStage]);
+  // Single consolidated 1-second game-loop tick — replaces 4 separate setInterval calls.
+  // Battery drains every 4th tick (uses a counter ref to avoid extra state).
+  const batteryTickRef = useRef(0);
+  const coordsTickRef  = useRef(0);
 
   useEffect(() => {
     const t = setInterval(() => {
-      setCoords((c) => ({
-        x: c.x + Math.round((Math.random() - 0.5) * 4),
-        y: c.y + Math.round((Math.random() - 0.5) * 4),
-      }));
-    }, 3000);
-    return () => clearInterval(t);
-  }, []);
+      // Always update the clock
+      setTime(new Date());
 
-  useEffect(() => {
-    if (!booted || missionStatus !== 'active' || missionStage.includes('intercom')) return;
-    const t = setInterval(() => {
+      // Coords drift every 3 ticks
+      coordsTickRef.current = (coordsTickRef.current + 1) % 3;
+      if (coordsTickRef.current === 0) {
+        setCoords((c) => ({
+          x: c.x + Math.round((Math.random() - 0.5) * 4),
+          y: c.y + Math.round((Math.random() - 0.5) * 4),
+        }));
+      }
+
+      // Gameplay-only updates
+      if (!booted || missionStatus !== 'active' || missionStage.includes('intercom')) return;
+
+      // Mission elapsed
       setMissionElapsed((e) => Math.min(e + 1000, MISSION_DURATION_MS));
+
+      // Battery drains every 4 ticks
+      batteryTickRef.current = (batteryTickRef.current + 1) % 4;
+      if (batteryTickRef.current === 0) {
+        setBattery((b) => Math.max(4, b - Math.random() * 0.4));
+      }
     }, 1000);
     return () => clearInterval(t);
   }, [booted, missionStatus, missionStage]);

@@ -38,8 +38,13 @@ function getPlugY(index: number, total: number) {
 export default function PowerGridStage({ onSuccess }: Props) {
   const [rightOrder] = useState(() => shuffle(WIRE_COLORS));
   const [connected, setConnected] = useState<Record<string, boolean>>({});
-  const [dragging, setDragging] = useState<string | null>(null);
-  const [mouse, setMouse] = useState({ x: 0, y: 0 });
+  // dragging is now a ref to avoid re-renders on every mouse move
+  const draggingRef = useRef<string | null>(null);
+  // mouse position tracked via ref + RAF for smooth rendering without React re-renders
+  const mouseRef = useRef({ x: 0, y: 0 });
+  const rafRef = useRef<number>(0);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const dragLayerRef = useRef<SVGGElement>(null);
   const [errorId, setErrorId] = useState<string | null>(null);
   const [successId, setSuccessId] = useState<string | null>(null);
   const containerRef = useRef<SVGSVGElement>(null);
@@ -61,31 +66,67 @@ export default function PowerGridStage({ onSuccess }: Props) {
     };
   }, []);
 
+  // Update the drag wire SVG path directly via DOM — no React re-render
+  const updateDragLayer = useCallback(() => {
+    const layer = dragLayerRef.current;
+    const wireId = draggingRef.current;
+    if (!layer) return;
+    if (!wireId) {
+      layer.innerHTML = '';
+      return;
+    }
+    const li = WIRE_COLORS.findIndex(w => w.id === wireId);
+    const w = WIRE_COLORS[li];
+    const ly = getPlugY(li, WIRE_COLORS.length);
+    const mx = mouseRef.current.x;
+    const my = mouseRef.current.y;
+    const cpx = (LEFT_X + 20 + mx) / 2;
+
+    layer.innerHTML = `
+      <path
+        d="M ${LEFT_X + 20} ${ly} C ${cpx} ${ly}, ${cpx} ${my}, ${mx} ${my}"
+        stroke="${w.color}" stroke-width="12" fill="none" stroke-linecap="round" opacity="0.2"
+      />
+      <path
+        d="M ${LEFT_X + 20} ${ly} C ${cpx} ${ly}, ${cpx} ${my}, ${mx} ${my}"
+        stroke="${w.color}" stroke-width="4.5" fill="none" stroke-linecap="round"
+        stroke-dasharray="12 4"
+        style="filter: drop-shadow(0 0 8px ${w.glow})"
+      />
+      <circle cx="${mx}" cy="${my}" r="9" fill="${w.color}"
+        style="filter: drop-shadow(0 0 10px ${w.glow})" />
+    `;
+  }, []);
+
   // Global mousemove / mouseup
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
       if (!isDragging.current) return;
-      setMouse(getContainerMouse(e));
+      mouseRef.current = getContainerMouse(e);
+      // Throttle DOM updates via RAF
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(updateDragLayer);
     };
 
     const onUp = (e: MouseEvent) => {
       if (!isDragging.current) return;
       isDragging.current = false;
+      cancelAnimationFrame(rafRef.current);
 
       const { x, y } = getContainerMouse(e);
-      const currentDragging = dragging;
-      if (!currentDragging) { setDragging(null); return; }
+      const currentDragging = draggingRef.current;
+      draggingRef.current = null;
+      updateDragLayer(); // clear the drag layer
+
+      if (!currentDragging) return;
 
       // Check if near any right socket
-      let hit = false;
       for (let i = 0; i < rightOrder.length; i++) {
         const target = rightOrder[i];
         const ty = getPlugY(i, WIRE_COLORS.length);
         const dist = Math.hypot(x - RIGHT_X, y - ty);
         if (dist < 32) {
-          hit = true;
           if (target.id === currentDragging) {
-            // Correct!
             setSuccessId(currentDragging);
             setTimeout(() => setSuccessId(null), 600);
             setConnected(prev => {
@@ -96,31 +137,30 @@ export default function PowerGridStage({ onSuccess }: Props) {
               return next;
             });
           } else {
-            // Wrong
             setErrorId(currentDragging);
             setTimeout(() => setErrorId(null), 500);
           }
           break;
         }
       }
-      // If no socket hit, just cancel
-      setDragging(null);
     };
 
-    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mousemove', onMove, { passive: true });
     window.addEventListener('mouseup', onUp);
     return () => {
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
+      cancelAnimationFrame(rafRef.current);
     };
-  }, [dragging, rightOrder, getContainerMouse, onSuccess]);
+  }, [rightOrder, getContainerMouse, onSuccess, updateDragLayer]);
 
   const startDrag = (wireId: string, e: React.MouseEvent) => {
     if (connected[wireId]) return;
     e.preventDefault();
     isDragging.current = true;
-    setDragging(wireId);
-    setMouse(getContainerMouse(e));
+    draggingRef.current = wireId;
+    mouseRef.current = getContainerMouse(e);
+    updateDragLayer();
   };
 
   const completedCount = Object.keys(connected).length;
@@ -130,7 +170,7 @@ export default function PowerGridStage({ onSuccess }: Props) {
       {/* Header */}
       <div className="mb-6 flex flex-col items-center gap-1">
         <h2 className="flex items-center gap-2 text-2xl font-bold tracking-[0.3em] text-[#ffb000]">
-          <Zap size={22} /> 
+          <Zap size={22} />
           <FuzzyText baseIntensity={0.2} hoverIntensity={0.6} color="#ffb000" fontSize="1.5rem" fontWeight="bold">
             POWER GRID REWIRING
           </FuzzyText>
@@ -147,7 +187,7 @@ export default function PowerGridStage({ onSuccess }: Props) {
         className="w-full max-w-3xl rounded-lg border border-[#ffb000]/20 bg-black/60"
         style={{
           maxHeight: '440px',
-          cursor: dragging ? 'crosshair' : 'default',
+          cursor: isDragging.current ? 'crosshair' : 'default',
           userSelect: 'none',
         }}
       >
@@ -203,39 +243,14 @@ export default function PowerGridStage({ onSuccess }: Props) {
           );
         })}
 
-        {/* Active drag wire */}
-        {dragging && (() => {
-          const li = WIRE_COLORS.findIndex(w => w.id === dragging);
-          const w = WIRE_COLORS[li];
-          const ly = getPlugY(li, WIRE_COLORS.length);
-          const mx = mouse.x;
-          const my = mouse.y;
-          const cpx = (LEFT_X + 20 + mx) / 2;
-          return (
-            <g>
-              <path
-                d={`M ${LEFT_X + 20} ${ly} C ${cpx} ${ly}, ${cpx} ${my}, ${mx} ${my}`}
-                stroke={w.color} strokeWidth="12" fill="none" strokeLinecap="round" opacity="0.2"
-              />
-              <path
-                d={`M ${LEFT_X + 20} ${ly} C ${cpx} ${ly}, ${cpx} ${my}, ${mx} ${my}`}
-                stroke={w.color} strokeWidth="4.5" fill="none" strokeLinecap="round"
-                strokeDasharray="12 4"
-                style={{ filter: `drop-shadow(0 0 8px ${w.glow})` }}
-              />
-              {/* cursor dot */}
-              <circle cx={mx} cy={my} r="9" fill={w.color}
-                style={{ filter: `drop-shadow(0 0 10px ${w.glow})` }} />
-            </g>
-          );
-        })()}
+        {/* Active drag wire — rendered directly into DOM via ref, no React state */}
+        <g ref={dragLayerRef} />
 
         {/* Left plugs */}
         {WIRE_COLORS.map((w, i) => {
           const y = getPlugY(i, WIRE_COLORS.length);
           const done = connected[w.id];
           const isError = errorId === w.id;
-          const isSuccess = successId === w.id;
 
           return (
             <g key={`left-${w.id}`}
@@ -273,7 +288,6 @@ export default function PowerGridStage({ onSuccess }: Props) {
         {rightOrder.map((w, i) => {
           const y = getPlugY(i, WIRE_COLORS.length);
           const done = connected[w.id];
-          const isSuccess = successId === w.id;
 
           return (
             <g key={`right-${w.id}`}>
@@ -281,7 +295,7 @@ export default function PowerGridStage({ onSuccess }: Props) {
               <line x1={RIGHT_X - 52} y1={y} x2={RIGHT_X - 20} y2={y}
                 stroke={w.color} strokeWidth="4" strokeLinecap="round"
                 opacity={done ? 0.35 : 0.8}/>
-              {/* Socket - octagon look via two rects */}
+              {/* Socket */}
               <rect x={RIGHT_X - 16} y={y - 16} width="32" height="32" rx="6"
                 fill={done ? `${w.color}33` : `${w.color}0d`}
                 stroke={w.color}

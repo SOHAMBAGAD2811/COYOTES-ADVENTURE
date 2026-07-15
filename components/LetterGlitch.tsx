@@ -27,6 +27,8 @@ const LetterGlitch = ({
   const grid = useRef({ columns: 0, rows: 0 });
   const context = useRef<CanvasRenderingContext2D | null>(null);
   const lastGlitchTime = useRef(Date.now());
+  const isVisibleRef = useRef(true);
+  const isAnimatingRef = useRef(false);
 
   const lettersAndSymbols = Array.from(characters);
 
@@ -125,10 +127,11 @@ const LetterGlitch = ({
     });
   };
 
+  // Update only 3% of letters per tick (was 5%) — reduces CPU work
   const updateLetters = () => {
     if (!letters.current || letters.current.length === 0) return;
 
-    const updateCount = Math.max(1, Math.floor(letters.current.length * 0.05));
+    const updateCount = Math.max(1, Math.floor(letters.current.length * 0.03));
 
     for (let i = 0; i < updateCount; i++) {
       const index = Math.floor(Math.random() * letters.current.length);
@@ -168,6 +171,12 @@ const LetterGlitch = ({
   };
 
   const animate = () => {
+    // Skip frames entirely when not visible — no wasted CPU/GPU work
+    if (!isVisibleRef.current) {
+      animationRef.current = requestAnimationFrame(animate);
+      return;
+    }
+
     const now = Date.now();
     if (now - lastGlitchTime.current >= glitchSpeed) {
       updateLetters();
@@ -188,7 +197,18 @@ const LetterGlitch = ({
 
     context.current = canvas.getContext('2d');
     resizeCanvas();
-    animate();
+
+    // Visibility observer — pause rendering when off-screen
+    const observer = new IntersectionObserver(
+      ([entry]) => { isVisibleRef.current = entry.isIntersecting; },
+      { threshold: 0 }
+    );
+    observer.observe(canvas);
+
+    if (!isAnimatingRef.current) {
+      isAnimatingRef.current = true;
+      animationRef.current = requestAnimationFrame(animate);
+    }
 
     let resizeTimeout: ReturnType<typeof setTimeout>;
 
@@ -196,15 +216,19 @@ const LetterGlitch = ({
       clearTimeout(resizeTimeout);
       resizeTimeout = setTimeout(() => {
         if (animationRef.current) cancelAnimationFrame(animationRef.current);
+        isAnimatingRef.current = false;
         resizeCanvas();
-        animate();
-      }, 100);
+        isAnimatingRef.current = true;
+        animationRef.current = requestAnimationFrame(animate);
+      }, 150);
     };
 
     window.addEventListener('resize', handleResize);
 
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      isAnimatingRef.current = false;
+      observer.disconnect();
       window.removeEventListener('resize', handleResize);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -225,7 +249,8 @@ const LetterGlitch = ({
   const canvasStyle: React.CSSProperties = {
     display: 'block',
     width: '100%',
-    height: '100%'
+    height: '100%',
+    willChange: 'contents',
   };
 
   const outerVignetteStyle: React.CSSProperties = {

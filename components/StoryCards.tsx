@@ -23,38 +23,30 @@ const glitchVariant = {
     x: [0, -4, 4, -2, 2, 0],
     filter: ['blur(8px)', 'blur(0px)', 'blur(2px)', 'blur(0px)', 'blur(1px)', 'blur(0px)'],
     transition: {
-      delay: i * 1.5, // Faster pacing: 1.5s per line
+      delay: i * 1.5,
       duration: 0.6,
       ease: 'linear'
     }
   })
 };
 
+// Pre-generate star positions once at module level — they're static values
+const STAR_DATA = Array.from({ length: 60 }).map((_, i) => ({
+  id: i,
+  x: (7 + (i * 1.618033) % 93).toFixed(2),    // golden-ratio spread for even distribution
+  y: ((i * 2.618033) % 97).toFixed(2),
+  size: (0.5 + (i % 5) * 0.5).toFixed(1),
+  delay: `${((i * 0.37) % 3).toFixed(2)}s`,
+  duration: `${(2 + (i % 3)).toFixed(1)}s`,
+}));
+
 export default function StoryCards({ onComplete }: Props) {
-  const [stars, setStars] = useState<
-    Array<{
-      id: number;
-      x: number;
-      y: number;
-      size: number;
-      delay: number;
-      duration: number;
-    }>
-  >([]);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setStars(
-      Array.from({ length: 60 }).map((_, i) => ({
-        id: i,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        size: Math.random() * 2.5 + 0.5,
-        delay: Math.random() * 3,
-        duration: Math.random() * 3 + 2,
-      }))
-    );
+    setMounted(true);
 
-    const timeouts: NodeJS.Timeout[] = [];
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       STORY.forEach((line, i) => {
@@ -63,7 +55,7 @@ export default function StoryCards({ onComplete }: Props) {
           utterance.rate = 0.9;
           utterance.pitch = 0.7;
           window.speechSynthesis.speak(utterance);
-        }, i * 1500 + 200); // 200ms initial buffer, 1500ms stagger matching animation
+        }, i * 1500 + 200);
         timeouts.push(t);
       });
     }
@@ -77,37 +69,31 @@ export default function StoryCards({ onComplete }: Props) {
   }, []);
 
   return (
-    <div 
+    <div
       className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black p-8 text-center cursor-pointer"
       onClick={onComplete}
     >
       <div className="grain-overlay z-0" />
-      
-      {/* Glowing Stars Background */}
-      <div className="absolute inset-0 z-0 overflow-hidden opacity-60">
-        {stars.map((star) => (
-          <motion.div
-            key={star.id}
-            className="absolute rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"
-            style={{
-              left: `${star.x}%`,
-              top: `${star.y}%`,
-              width: `${star.size}px`,
-              height: `${star.size}px`,
-            }}
-            animate={{
-              opacity: [0.1, 1, 0.1],
-              scale: [0.8, 1.2, 0.8],
-            }}
-            transition={{
-              duration: star.duration,
-              delay: star.delay,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-          />
-        ))}
-      </div>
+
+      {/* Glowing Stars Background — pure CSS animations, no JS per-star */}
+      {mounted && (
+        <div className="absolute inset-0 z-0 overflow-hidden opacity-60">
+          {STAR_DATA.map((star) => (
+            <div
+              key={star.id}
+              className="story-star"
+              style={{
+                left: `${star.x}%`,
+                top: `${star.y}%`,
+                width: `${star.size}px`,
+                height: `${star.size}px`,
+                ['--star-delay' as string]: star.delay,
+                ['--star-duration' as string]: star.duration,
+              } as React.CSSProperties}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Story Lines */}
       <div className="relative z-10 flex w-full max-w-4xl flex-col gap-6 md:gap-8 items-center">
@@ -126,7 +112,7 @@ export default function StoryCards({ onComplete }: Props) {
         ))}
       </div>
 
-      <motion.button 
+      <motion.button
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: STORY.length * 1.5 + 1, duration: 1 }}
