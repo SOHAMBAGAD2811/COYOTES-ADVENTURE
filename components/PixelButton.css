@@ -21,8 +21,6 @@
   transition: border-color 200ms cubic-bezier(0.5, 1, 0.89, 1);
   user-select: none;
   background-color: rgba(0, 0, 0, 0.8);
-  padding: 0; /* Let inner content dictate padding or set specific padding */
-  min-height: 40px;
   cursor: pointer;
   outline: none;
 }

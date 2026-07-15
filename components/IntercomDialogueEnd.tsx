@@ -60,7 +60,7 @@ export default function IntercomDialogueEnd({ onProceed }: Props) {
               variant="green"
               onClick={onProceed}
               disabled={text.length < fullText.length}
-              className="px-8 py-3 text-sm font-bold tracking-[0.2em] text-[#00ff88]"
+              className="px-10 py-4 text-sm font-bold tracking-[0.2em] text-[#00ff88]"
             >
               FINISH MISSION
             </PixelButton>

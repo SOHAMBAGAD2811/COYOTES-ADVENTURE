@@ -266,7 +266,7 @@ export default function BootSequence({ onBootComplete }: BootSequenceProps) {
                   <PixelButton
                     variant="coyote"
                     onClick={handleEngage}
-                    className="engage-btn px-10 py-3 text-sm font-bold tracking-[0.35em] text-amber-glow"
+                    className="engage-btn px-12 py-4 text-sm font-bold tracking-[0.35em] text-amber-glow"
                   >
                     ▶ PRESS TO ENGAGE
                   </PixelButton>
