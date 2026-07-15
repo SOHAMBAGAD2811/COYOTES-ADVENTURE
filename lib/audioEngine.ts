@@ -7,6 +7,8 @@ class AudioEngine {
   activeNoises: AudioBufferSourceNode[] = [];
   activeIntervals: NodeJS.Timeout[] = [];
   currentTrack: string | null = null;
+  isMuted: boolean = false;
+  listeners: Set<(muted: boolean) => void> = new Set();
 
   init() {
     if (this.ctx) return;
@@ -15,7 +17,7 @@ class AudioEngine {
     
     this.ctx = new AudioCtx();
     this.masterGain = this.ctx.createGain();
-    this.masterGain.gain.value = 0.4;
+    this.masterGain.gain.value = this.isMuted ? 0 : 0.4;
     this.masterGain.connect(this.ctx.destination);
 
     const unlock = () => {
@@ -25,6 +27,19 @@ class AudioEngine {
     };
     window.addEventListener('click', unlock);
     window.addEventListener('keydown', unlock);
+  }
+
+  toggleMute() {
+    this.isMuted = !this.isMuted;
+    if (this.masterGain && this.ctx) {
+      this.masterGain.gain.setTargetAtTime(this.isMuted ? 0 : 0.4, this.ctx.currentTime, 0.05);
+    }
+    this.listeners.forEach(l => l(this.isMuted));
+  }
+
+  subscribe(listener: (muted: boolean) => void) {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
   }
 
   resume() {
