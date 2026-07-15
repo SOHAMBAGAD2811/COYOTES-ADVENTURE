@@ -6,50 +6,48 @@
   height: 0;
   pointer-events: none;
   z-index: 9999;
+  will-change: left, top, transform;
 }
 
 .target-cursor-dot {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 4px;
-  height: 4px;
-  background: #fff;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
+  background: #fff;
   transform: translate(-50%, -50%);
   will-change: transform;
 }
 
 .target-cursor-corner {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 12px;
-  height: 12px;
-  border: 3px solid #fff;
+  width: 10px;
+  height: 10px;
+  border: 2px solid #fff;
   will-change: transform;
 }
 
+/* Base corner positions relative to the anchor (cursor center) */
 .corner-tl {
-  transform: translate(-150%, -150%);
   border-right: none;
   border-bottom: none;
+  transform: translate(-10px, -10px);
 }
 
 .corner-tr {
-  transform: translate(50%, -150%);
   border-left: none;
   border-bottom: none;
+  transform: translate(0px, -10px);
 }
 
 .corner-br {
-  transform: translate(50%, 50%);
   border-left: none;
   border-top: none;
+  transform: translate(0px, 0px);
 }
 
 .corner-bl {
-  transform: translate(-150%, 50%);
   border-right: none;
   border-top: none;
+  transform: translate(-10px, 0px);
 }
