@@ -22,6 +22,7 @@ import DecryptionStage from '@/components/DecryptionStage';
 import ThrusterStage from '@/components/ThrusterStage';
 import BiosphereStage from '@/components/BiosphereStage';
 import RiddleStage from '@/components/RiddleStage';
+import { cursorStore } from '@/lib/cursorStore';
 
 
 const panelVariants = {
@@ -75,6 +76,13 @@ export default function Home() {
       audio.playTrack(track);
     });
   }, [s.missionStage, s.missionStatus, s.storyComplete, s.booted]);
+
+  // Cursor mode — minimal during active gameplay, full during story/intercom
+  useEffect(() => {
+    const gameplayStages = ['firewall', 'power', 'water', 'decryption', 'air', 'thruster', 'riddle', 'biosphere', 'earth'];
+    const isGameplay = gameplayStages.includes(s.missionStage);
+    cursorStore.setMode(isGameplay ? 'minimal' : 'full');
+  }, [s.missionStage]);
 
   // Ambient dust particles
   const dustParticles = useMemo(

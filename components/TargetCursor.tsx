@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo, useState } from 'react';
 import { gsap } from 'gsap';
+import { cursorStore } from '@/lib/cursorStore';
 import './TargetCursor.css';
 
 interface TargetCursorProps {
@@ -27,6 +28,11 @@ const TargetCursor = ({
   const dotRef = useRef<HTMLDivElement>(null);
   const cornersRef = useRef<HTMLDivElement[]>([]);
 
+  const [mode, setMode] = useState(cursorStore.mode);
+
+  // Subscribe to global cursor mode changes
+  useEffect(() => cursorStore.subscribe(setMode), []);
+
   const isMobile = useMemo(() => {
     if (typeof window === 'undefined') return false;
     const ua = navigator.userAgent || '';
@@ -43,12 +49,18 @@ const TargetCursor = ({
 
     if (hideDefaultCursor) document.body.style.cursor = 'none';
 
+    // Reflect mode changes on the wrapper
+    const unsubMode = cursorStore.subscribe(m => {
+      wrapper.style.opacity = m === 'minimal' ? '0.3' : '1';
+    });
+    wrapper.style.opacity = cursorStore.mode === 'minimal' ? '0.3' : '1';
+
     let mouseX = window.innerWidth / 2;
     let mouseY = window.innerHeight / 2;
     let curX = mouseX;
     let curY = mouseY;
     let rafId = 0;
-    let spinning = true;
+    let spinning = cursorStore.mode === 'full';
     let rotation = 0;
     let lastTime = performance.now();
     const degsPerMs = 360 / (spinDuration * 1000);
@@ -234,6 +246,7 @@ const TargetCursor = ({
       window.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('mouseup', onMouseUp);
       detachLeave();
+      unsubMode();
       if (hideDefaultCursor) document.body.style.cursor = '';
     };
   }, [isMobile, hideDefaultCursor, targetSelector, spinDuration, hoverDuration, parallaxOn, cursorColor, cursorColorOnTarget]);
@@ -242,13 +255,27 @@ const TargetCursor = ({
 
   return (
     <div ref={cursorRef} className="target-cursor-wrapper">
-      <div ref={dotRef} className="target-cursor-dot" style={{ backgroundColor: cursorColor }} />
+      <div
+        ref={dotRef}
+        className="target-cursor-dot"
+        style={{
+          backgroundColor: cursorColor,
+          width: mode === 'minimal' ? '3px' : '5px',
+          height: mode === 'minimal' ? '3px' : '5px',
+          opacity: mode === 'minimal' ? 0.4 : 1,
+          transition: 'width 0.4s, height 0.4s, opacity 0.4s',
+        }}
+      />
       {(['corner-tl', 'corner-tr', 'corner-br', 'corner-bl'] as const).map((cls, i) => (
         <div
           key={cls}
           ref={el => { if (el) cornersRef.current[i] = el; }}
           className={`target-cursor-corner ${cls}`}
-          style={{ borderColor: cursorColor }}
+          style={{
+            borderColor: cursorColor,
+            opacity: mode === 'minimal' ? 0 : 1,
+            transition: 'opacity 0.4s',
+          }}
         />
       ))}
     </div>
