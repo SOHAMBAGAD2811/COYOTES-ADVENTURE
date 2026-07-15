@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import PixelButton from './PixelButton';
+import PixelSnow from './PixelSnow';
 
 interface Props {
   onProceed: () => void;
@@ -30,7 +31,18 @@ export default function IntercomDialogue2({ onProceed }: Props) {
       exit={{ opacity: 0 }}
       className="absolute inset-0 z-50 flex items-center justify-center bg-black/90 p-8 backdrop-blur-md"
     >
-      <div className="flex w-full max-w-4xl flex-col md:flex-row items-center gap-8 border-2 border-amber-glow/30 bg-matte-base p-8 shadow-hardware-out">
+      <PixelSnow 
+        color="#ffb000"
+        flakeSize={0.01}
+        minFlakeSize={1.25}
+        pixelResolution={200}
+        speed={1.25}
+        density={0.2}
+        direction={125}
+        brightness={0.3}
+        className="absolute inset-0 z-0 pointer-events-none opacity-50"
+      />
+      <div className="relative z-10 flex w-full max-w-4xl flex-col md:flex-row items-center gap-8 border-2 border-amber-glow/30 bg-matte-base p-8 shadow-hardware-out">
         
         {/* Avatar */}
         <div className="flex-shrink-0 border-4 border-amber-glow/50 bg-black p-2 shadow-[0_0_15px_rgba(255,176,0,0.3)]">
