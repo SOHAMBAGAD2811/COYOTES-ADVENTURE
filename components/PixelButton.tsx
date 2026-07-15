@@ -203,9 +203,8 @@ export default function PixelButton({
   const initPixels = () => {
     if (!containerRef.current || !canvasRef.current) return;
 
-    const rect = containerRef.current.getBoundingClientRect();
-    const width = Math.floor(rect.width);
-    const height = Math.floor(rect.height);
+    const width = containerRef.current.offsetWidth;
+    const height = containerRef.current.offsetHeight;
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
 
