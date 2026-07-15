@@ -69,13 +69,6 @@ const RIDDLE_POOL: Riddle[] = [
   },
   {
     category: 'LOGIC',
-    question: 'Three guards stand watch. One always lies. One always tells the truth. One alternates. You can ask ONE question to ONE guard. Which question reveals the safe door?',
-    hints: ['You need a self-referential question', '"Would the liar say this door is safe?"', 'If the answer is YES, go the other way'],
-    answer: ['would the liar say', 'would the other guard say', 'self referential', 'meta question'],
-    answerDisplay: 'ASK A SELF-REFERENTIAL QUESTION',
-  },
-  {
-    category: 'LOGIC',
     question: 'A hacker encodes a message: 1=A, 2=B... What does 3-15-25-15-20-5 spell?',
     hints: ['Match each number to a letter', '3=C, 15=O', '25=Y, 20=T, 5=E'],
     answer: ['coyote', 'c o y o t e'],
