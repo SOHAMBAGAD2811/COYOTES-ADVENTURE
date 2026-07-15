@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import PixelButton from './PixelButton';
 
 interface Props {
   onProceed: () => void;
@@ -57,13 +58,14 @@ export default function IntercomDialogueGeneric({ onProceed, message, buttonText
           </div>
 
           <div className="mt-8 flex justify-end">
-            <button
+            <PixelButton
+              variant="coyote"
               onClick={onProceed}
               disabled={text.length < message.length}
-              className="rounded border border-amber-glow/50 px-8 py-3 text-sm font-bold tracking-[0.2em] text-amber-glow transition-all hover:bg-amber-glow/20 disabled:opacity-20"
+              className="px-8 py-3 text-sm font-bold tracking-[0.2em] text-amber-glow"
             >
               {buttonText}
-            </button>
+            </PixelButton>
           </div>
         </div>
       </div>

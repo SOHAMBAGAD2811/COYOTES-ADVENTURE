@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import PixelButton from './PixelButton';
 
 interface BootSequenceProps {
   onBootComplete: () => void;
@@ -252,18 +253,13 @@ export default function BootSequence({ onBootComplete }: BootSequenceProps) {
                   transition={{ type: 'spring', stiffness: 200, damping: 18 }}
                   className="flex justify-center pt-2"
                 >
-                  <button
-                    type="button"
+                  <PixelButton
+                    variant="coyote"
                     onClick={handleEngage}
-                    className="engage-btn relative rounded-md border border-amber-glow/60 bg-amber-glow/10 px-10 py-3 text-sm font-bold tracking-[0.35em] text-amber-glow transition-all hover:bg-amber-glow/20 active:scale-95 active:shadow-hardware-in"
-                    style={{
-                      textShadow: glow(0.8),
-                      boxShadow: `0 0 15px rgba(255,176,0,0.15), 0 0 40px rgba(255,176,0,0.08)`,
-                      animation: 'engage-pulse 2s ease-in-out infinite',
-                    }}
+                    className="engage-btn px-10 py-3 text-sm font-bold tracking-[0.35em] text-amber-glow"
                   >
                     ▶ PRESS TO ENGAGE
-                  </button>
+                  </PixelButton>
                 </motion.div>
               )}
             </AnimatePresence>
