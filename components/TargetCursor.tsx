@@ -57,6 +57,7 @@ const TargetCursor = ({
   const targetCornerPositionsRef = useRef<any>(null);
   const tickerFnRef = useRef<any>(null);
   const activeStrengthRef = useRef(0);
+  const blockOffsetRef = useRef({ x: 0, y: 0 });
 
   const isMobile = useMemo(() => {
     if (typeof window === 'undefined') return false;
@@ -76,17 +77,6 @@ const TargetCursor = ({
     []
   );
 
-  const moveCursor = useCallback((x: number, y: number) => {
-    if (!cursorRef.current) return;
-    const { x: offsetX, y: offsetY } = getContainingBlockOffset(containingBlockRef.current);
-    gsap.to(cursorRef.current, {
-      x: x - offsetX,
-      y: y - offsetY,
-      duration: 0.1,
-      ease: 'power3.out'
-    });
-  }, []);
-
   useEffect(() => {
     if (isMobile || !cursorRef.current) return;
 
@@ -99,7 +89,14 @@ const TargetCursor = ({
     cornersRef.current = cursor.querySelectorAll('.target-cursor-corner');
 
     containingBlockRef.current = getContainingBlock(cursor);
-    const getOffset = () => getContainingBlockOffset(containingBlockRef.current);
+    const updateBlockOffset = () => {
+      blockOffsetRef.current = getContainingBlockOffset(containingBlockRef.current);
+    };
+    updateBlockOffset();
+
+    // High performance setters
+    const xTo = gsap.quickTo(cursor, "x", { duration: 0.15, ease: "power3.out" });
+    const yTo = gsap.quickTo(cursor, "y", { duration: 0.15, ease: "power3.out" });
 
     let activeTarget: any = null;
     let currentLeaveHandler: any = null;
@@ -112,12 +109,11 @@ const TargetCursor = ({
       currentLeaveHandler = null;
     };
 
-    const initialOffset = getOffset();
     gsap.set(cursor, {
       xPercent: -50,
       yPercent: -50,
-      x: window.innerWidth / 2 - initialOffset.x,
-      y: window.innerHeight / 2 - initialOffset.y
+      x: window.innerWidth / 2 - blockOffsetRef.current.x,
+      y: window.innerHeight / 2 - blockOffsetRef.current.y
     });
 
     const createSpinTimeline = () => {
@@ -167,18 +163,21 @@ const TargetCursor = ({
 
     tickerFnRef.current = tickerFn;
 
-    const moveHandler = (e: any) => moveCursor(e.clientX, e.clientY);
-    window.addEventListener('mousemove', moveHandler);
+    const moveHandler = (e: any) => {
+      xTo(e.clientX - blockOffsetRef.current.x);
+      yTo(e.clientY - blockOffsetRef.current.y);
+    };
+    window.addEventListener('mousemove', moveHandler, { passive: true });
 
     const scrollHandler = () => {
+      updateBlockOffset();
       if (!activeTarget || !cursorRef.current) return;
-      const { x: offsetX, y: offsetY } = getOffset();
-      const mouseX = (gsap.getProperty(cursorRef.current, 'x') as number) + offsetX;
-      const mouseY = (gsap.getProperty(cursorRef.current, 'y') as number) + offsetY;
+      const mouseX = (gsap.getProperty(cursorRef.current, 'x') as number) + blockOffsetRef.current.x;
+      const mouseY = (gsap.getProperty(cursorRef.current, 'y') as number) + blockOffsetRef.current.y;
       const elementUnderMouse = document.elementFromPoint(mouseX, mouseY);
       const isStillOverTarget =
         elementUnderMouse &&
-        (elementUnderMouse === activeTarget || elementUnderMouse.closest(targetSelector) === activeTarget);
+        (elementUnderMouse === activeTarget || (elementUnderMouse.closest && elementUnderMouse.closest(targetSelector) === activeTarget));
       if (!isStillOverTarget) {
         if (currentLeaveHandler) {
           currentLeaveHandler();
@@ -206,11 +205,11 @@ const TargetCursor = ({
       const directTarget = e.target;
       const allTargets = [];
       let current = directTarget;
-      while (current && current !== document.body) {
-        if (current.matches(targetSelector)) {
+      while (current && current !== document.body && current !== document.documentElement) {
+        if (current.matches && current.matches(targetSelector)) {
           allTargets.push(current);
         }
-        current = current.parentElement;
+        current = current.parentElement || current.parentNode;
       }
       const target = allTargets[0] || null;
       if (!target || !cursorRef.current || !cornersRef.current) return;
@@ -248,7 +247,7 @@ const TargetCursor = ({
 
       const rect = target.getBoundingClientRect();
       const { borderWidth, cornerSize } = constants;
-      const { x: offsetX, y: offsetY } = getOffset();
+      const { x: offsetX, y: offsetY } = blockOffsetRef.current;
       const cursorX = gsap.getProperty(cursorRef.current, 'x') as number;
       const cursorY = gsap.getProperty(cursorRef.current, 'y') as number;
 
@@ -356,6 +355,7 @@ const TargetCursor = ({
 
     const resizeHandler = () => {
       containingBlockRef.current = getContainingBlock(cursor);
+      updateBlockOffset();
     };
     window.addEventListener('resize', resizeHandler);
 
@@ -385,7 +385,6 @@ const TargetCursor = ({
   }, [
     targetSelector,
     spinDuration,
-    moveCursor,
     constants,
     hideDefaultCursor,
     isMobile,
