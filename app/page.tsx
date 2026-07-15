@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useInterceptState } from '@/lib/useInterceptState';
 import BootSequence from '@/components/BootSequence';
@@ -41,6 +41,39 @@ export default function Home() {
   const missionSeconds = Math.max(0, Math.ceil((s.missionDuration - s.missionElapsed) / 1000));
   const missionMin = Math.floor(missionSeconds / 60);
   const missionSec = missionSeconds % 60;
+
+  // Background Music Manager
+  useEffect(() => {
+    let track = 'intro';
+    if (s.missionStatus === 'success') {
+      track = 'success';
+    } else if (s.missionStatus === 'fail') {
+      track = 'intro';
+    } else if (s.missionStage === 'firewall') {
+      track = 'firewall';
+    } else if (s.missionStage === 'power') {
+      track = 'power';
+    } else if (s.missionStage === 'decryption') {
+      track = 'decryption';
+    } else if (s.missionStage === 'thruster') {
+      track = 'thrusters';
+    } else if (s.missionStage === 'air') {
+      track = 'air';
+    } else if (s.missionStage === 'biosphere' || s.missionStage === 'earth') {
+      track = 'biosphere';
+    } else if (s.missionStage === 'riddle') {
+      track = 'riddle';
+    } else if (s.missionStage === 'water') {
+      track = 'intro';
+    } else if (s.missionStage.includes('intercom')) {
+      track = 'intro'; // calm down during dialogue
+    }
+
+    // Dynamic import to avoid SSR issues if audio relies on window
+    import('@/lib/audioEngine').then(({ audio }) => {
+      audio.playTrack(track);
+    });
+  }, [s.missionStage, s.missionStatus, s.storyComplete, s.booted]);
 
   // Ambient dust particles
   const dustParticles = useMemo(
