@@ -1,3 +1,4 @@
+/* ── Wrapper: fixed at viewport 0,0; moves only via JS transform ── */
 .target-cursor-wrapper {
   position: fixed;
   top: 0;
@@ -6,36 +7,46 @@
   height: 0;
   pointer-events: none;
   z-index: 9999;
-  will-change: left, top, transform;
+  will-change: transform;
 }
 
-/* ── Full mode (story/intercom): spinning target brackets ── */
-
+/* ── Central dot ── */
 .target-cursor-dot {
   position: absolute;
-  width: 5px;
-  height: 5px;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: #fff;
+  background: currentColor;
+  /* Center dot on the wrapper origin (= exact mouse position) */
   transform: translate(-50%, -50%);
+  transition: transform 0.12s ease-out;
   will-change: transform;
 }
 
+/*
+  Corner brackets — CSS positions them so each corner's CENTRE sits at
+  ±CORNER_RADIUS (14px) from the wrapper origin.
+
+  Corner size = 12px → half = 6px
+  CSS top/left = -(14 + 6) = -20  OR  (14 - 6) = 8
+*/
 .target-cursor-corner {
   position: absolute;
-  width: 10px;
-  height: 10px;
-  border: 2px solid #fff;
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
   will-change: transform;
 }
 
-.corner-tl { border-right: none; border-bottom: none; }
-.corner-tr { border-left: none;  border-bottom: none; }
-.corner-br { border-left: none;  border-top: none;    }
-.corner-bl { border-right: none; border-top: none;    }
+.corner-tl { top: -20px; left: -20px; border-right: none; border-bottom: none; }
+.corner-tr { top: -20px; left:   8px; border-left:  none; border-bottom: none; }
+.corner-br { top:   8px; left:   8px; border-left:  none; border-top:    none; }
+.corner-bl { top:   8px; left: -20px; border-right: none; border-top:    none; }
 
-/* Global rule to override all explicit cursor rules (like on buttons/links) */
-body.hide-cursor-global, 
+/* ── Global cursor hide ── */
+body.hide-cursor-global,
 body.hide-cursor-global * {
   cursor: none !important;
 }
