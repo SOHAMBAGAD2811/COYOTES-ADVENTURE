@@ -33,3 +33,9 @@
 .corner-tr { border-left: none;  border-bottom: none; }
 .corner-br { border-left: none;  border-top: none;    }
 .corner-bl { border-right: none; border-top: none;    }
+
+/* Global rule to override all explicit cursor rules (like on buttons/links) */
+body.hide-cursor-global, 
+body.hide-cursor-global * {
+  cursor: none !important;
+}

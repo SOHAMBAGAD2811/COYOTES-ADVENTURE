@@ -73,7 +73,7 @@ const TargetCursor = ({
     const corners  = cornersRef.current;
     const dot      = dotRef.current;
 
-    if (hideDefaultCursor) document.body.style.cursor = 'none';
+    if (hideDefaultCursor) document.body.classList.add('hide-cursor-global');
 
     let mouseX = window.innerWidth / 2;
     let mouseY = window.innerHeight / 2;
@@ -255,7 +255,7 @@ const TargetCursor = ({
       window.removeEventListener('mouseup', onMouseUp);
       detachLeave();
       unsubMode();
-      if (hideDefaultCursor) document.body.style.cursor = '';
+      if (hideDefaultCursor) document.body.classList.remove('hide-cursor-global');
     };
   }, [isMobile, hideDefaultCursor, targetSelector, spinDuration, hoverDuration, parallaxOn, cursorColor, cursorColorOnTarget]);
 
