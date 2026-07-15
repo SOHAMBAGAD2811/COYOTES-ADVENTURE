@@ -47,7 +47,7 @@ export default function IntercomDialogueEnd({ onProceed }: Props) {
         {/* Avatar */}
         <div className="flex-shrink-0 border-4 border-[#00ff88]/50 bg-black p-2 shadow-[0_0_15px_rgba(0,255,136,0.3)]">
           <Image
-            src="/avatar_human.jpg"
+            src="/avatar.png"
             alt="Korg"
             width={160}
             height={160}

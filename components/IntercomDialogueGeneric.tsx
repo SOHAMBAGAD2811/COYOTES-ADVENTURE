@@ -13,7 +13,7 @@ interface Props {
   avatarSrc?: string;
 }
 
-export default function IntercomDialogueGeneric({ onProceed, message, buttonText = "PROCEED", avatarSrc = "/avatar_human.jpg" }: Props) {
+export default function IntercomDialogueGeneric({ onProceed, message, buttonText = "PROCEED", avatarSrc = "/avatar.png" }: Props) {
   const [text, setText] = useState('');
 
   useEffect(() => {

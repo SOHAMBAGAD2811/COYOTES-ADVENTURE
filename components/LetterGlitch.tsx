@@ -23,7 +23,7 @@ const LetterGlitch = ({
 }: LetterGlitchProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
-  const letters = useRef<{char: string, color: string, targetColor: string, colorProgress: number}[]>([]);
+  const letters = useRef<{char: string, color: {r:number,g:number,b:number}, startColor: {r:number,g:number,b:number}, targetColor: {r:number,g:number,b:number}, colorProgress: number}[]>([]);
   const grid = useRef({ columns: 0, rows: 0 });
   const context = useRef<CanvasRenderingContext2D | null>(null);
   const lastGlitchTime = useRef(Date.now());
@@ -40,9 +40,8 @@ const LetterGlitch = ({
     return lettersAndSymbols[Math.floor(Math.random() * lettersAndSymbols.length)];
   };
 
-  const getRandomColor = () => {
-    return glitchColors[Math.floor(Math.random() * glitchColors.length)];
-  };
+  // Pre-parse colors to avoid regex parsing in the animation loop
+  const parsedColors = useRef<{r: number, g: number, b: number}[]>([]);
 
   const hexToRgb = (hex: string) => {
     const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
@@ -57,16 +56,24 @@ const LetterGlitch = ({
           g: parseInt(result[2], 16),
           b: parseInt(result[3], 16)
         }
-      : null;
+      : { r: 0, g: 0, b: 0 };
+  };
+
+  useEffect(() => {
+    parsedColors.current = glitchColors.map(c => hexToRgb(c));
+  }, [glitchColors]);
+
+  const getRandomColor = () => {
+    const colors = parsedColors.current.length > 0 ? parsedColors.current : glitchColors.map(hexToRgb);
+    return colors[Math.floor(Math.random() * colors.length)];
   };
 
   const interpolateColor = (start: {r: number, g: number, b: number}, end: {r: number, g: number, b: number}, factor: number) => {
-    const result = {
-      r: Math.round(start.r + (end.r - start.r) * factor),
-      g: Math.round(start.g + (end.g - start.g) * factor),
-      b: Math.round(start.b + (end.b - start.b) * factor)
+    return {
+      r: start.r + (end.r - start.r) * factor,
+      g: start.g + (end.g - start.g) * factor,
+      b: start.b + (end.b - start.b) * factor
     };
-    return `rgb(${result.r}, ${result.g}, ${result.b})`;
   };
 
   const calculateGrid = (width: number, height: number) => {
@@ -78,12 +85,16 @@ const LetterGlitch = ({
   const initializeLetters = (columns: number, rows: number) => {
     grid.current = { columns, rows };
     const totalLetters = columns * rows;
-    letters.current = Array.from({ length: totalLetters }, () => ({
-      char: getRandomChar(),
-      color: getRandomColor(),
-      targetColor: getRandomColor(),
-      colorProgress: 1
-    }));
+    letters.current = Array.from({ length: totalLetters }, () => {
+      const color = getRandomColor();
+      return {
+        char: getRandomChar(),
+        color,
+        startColor: color,
+        targetColor: color,
+        colorProgress: 1
+      };
+    });
   };
 
   const resizeCanvas = () => {
@@ -122,7 +133,7 @@ const LetterGlitch = ({
     letters.current.forEach((letter, index) => {
       const x = (index % grid.current.columns) * charWidth;
       const y = Math.floor(index / grid.current.columns) * charHeight;
-      ctx.fillStyle = letter.color;
+      ctx.fillStyle = `rgb(${Math.round(letter.color.r)},${Math.round(letter.color.g)},${Math.round(letter.color.b)})`;
       ctx.fillText(letter.char, x, y);
     });
   };
@@ -138,6 +149,7 @@ const LetterGlitch = ({
       if (!letters.current[index]) continue;
 
       letters.current[index].char = getRandomChar();
+      letters.current[index].startColor = letters.current[index].color;
       letters.current[index].targetColor = getRandomColor();
 
       if (!smooth) {
@@ -156,12 +168,8 @@ const LetterGlitch = ({
         letter.colorProgress += 0.05;
         if (letter.colorProgress > 1) letter.colorProgress = 1;
 
-        const startRgb = hexToRgb(letter.color);
-        const endRgb = hexToRgb(letter.targetColor);
-        if (startRgb && endRgb) {
-          letter.color = interpolateColor(startRgb, endRgb, letter.colorProgress);
-          needsRedraw = true;
-        }
+        letter.color = interpolateColor(letter.startColor, letter.targetColor, letter.colorProgress);
+        needsRedraw = true;
       }
     });
 
